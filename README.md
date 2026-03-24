@@ -54,12 +54,19 @@ cp .env.example .env
 
 ### 4. Run
 
+**As a native macOS app (recommended):**
+```bash
+conda activate focusfeed
+python app.py
+```
+Opens a native window — no browser needed.
+
+**As a web server (alternative):**
 ```bash
 conda activate focusfeed
 python main.py
 ```
-
-Open **http://localhost:8000** in your browser.
+Then open **http://localhost:8000** in your browser.
 
 ## MLX model
 
