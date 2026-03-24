@@ -20,10 +20,13 @@
       --accent-glow: rgba(124,106,247,.3);
       --watch:       #22c55e;
       --watch-bg:    rgba(34,197,94,.12);
-      --watch-bd:    rgba(34,197,94,.4);
+      --watch-bd:    rgba(34,197,94,.35);
       --skip:        #ef4444;
       --skip-bg:     rgba(239,68,68,.12);
-      --skip-bd:     rgba(239,68,68,.4);
+      --skip-bd:     rgba(239,68,68,.35);
+      --like:        #f43f5e;
+      --like-bg:     rgba(244,63,94,.12);
+      --like-bd:     rgba(244,63,94,.35);
       --hype:        #f97316;
       --calm:        #3b82f6;
       --deep:        #8b5cf6;
@@ -39,304 +42,192 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: 80px;
     }
 
+    /* ── Header ── */
     header {
-      text-align: center;
-      padding: 52px 24px 28px;
-    }
-    header h1 {
-      font-size: 2.5rem;
-      font-weight: 900;
-      letter-spacing: -1px;
-      background: linear-gradient(130deg, #c4b4ff 0%, #7c6af7 45%, #60a5fa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    header p {
-      color: var(--sub);
-      margin-top: 7px;
-      font-size: 0.9rem;
-    }
-
-    main {
       width: 100%;
       max-width: 520px;
-      padding: 0 20px;
+      padding: 44px 20px 20px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
     }
+    .header-title { text-align: left; }
+    header h1 {
+      font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;
+      background: linear-gradient(130deg, #c4b4ff 0%, #7c6af7 45%, #60a5fa 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1;
+    }
+    header p { color: var(--sub); margin-top: 5px; font-size: 0.85rem; }
+
+    .history-btn {
+      background: var(--surface);
+      border: 1.5px solid var(--border2);
+      border-radius: 100px;
+      color: var(--sub);
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+    .history-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .history-btn .h-count {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-radius: 100px;
+      padding: 1px 6px;
+      font-size: 0.7rem;
+      display: none;
+    }
+    .history-btn .h-count.visible { display: inline; }
+
+    /* ── Main ── */
+    main { width: 100%; max-width: 520px; padding: 0 20px 80px; }
 
     .screen { display: none; flex-direction: column; gap: 18px; }
     .screen.active { display: flex; }
 
-    /* ── Model loading screen ── */
-    #model-screen {
-      align-items: center;
-      padding: 24px 0 16px;
-      text-align: center;
-      gap: 0;
-    }
+    /* ─────────────────────────────────────────────────────────── */
+    /* Model loading screen                                        */
+    /* ─────────────────────────────────────────────────────────── */
+    #model-screen { align-items: center; padding: 20px 0 16px; text-align: center; gap: 0; }
 
     .model-icon {
-      font-size: 3rem;
-      margin-bottom: 20px;
+      font-size: 3rem; margin-bottom: 18px;
       animation: pulse-icon 2.4s ease-in-out infinite;
     }
     @keyframes pulse-icon {
-      0%, 100% { transform: scale(1);   opacity: 1;   }
-      50%       { transform: scale(1.1); opacity: .75; }
+      0%,100% { transform:scale(1);   opacity:1;   }
+      50%      { transform:scale(1.1); opacity:.75; }
     }
+    .model-heading { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
 
-    .model-heading {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 16px;
-    }
-
-    /* model info card */
     .model-info-card {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 16px 18px;
-      margin-bottom: 22px;
-      text-align: left;
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 14px 16px; margin-bottom: 20px; text-align: left;
     }
-
     .model-info-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      font-size: 0.82rem;
-      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; font-size: 0.8rem; border-bottom: 1px solid var(--border);
     }
     .model-info-row:last-child { border-bottom: none; }
-    .model-info-key  { color: var(--sub); font-weight: 500; }
-    .model-info-val  { color: var(--text); font-weight: 600; font-family: "SF Mono", ui-monospace, monospace; font-size: 0.78rem; }
+    .model-info-key { color: var(--sub); }
+    .model-info-val { color: var(--text); font-weight: 600; font-family: ui-monospace, monospace; font-size: 0.76rem; }
     .model-info-val.accent { color: var(--accent); }
 
-    /* install steps */
-    .install-steps {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 20px;
-    }
-
+    .install-steps { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
     .install-step {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.82rem;
-      color: var(--sub);
-      padding: 8px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      transition: color .3s, border-color .3s;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.82rem; color: var(--sub);
+      padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; transition: color .3s, border-color .3s;
     }
-    .install-step.active  { color: var(--text); border-color: var(--accent); }
-    .install-step.done    { color: var(--watch); border-color: rgba(34,197,94,.3); }
-    .install-step.error   { color: var(--skip);  border-color: rgba(239,68,68,.3); }
-
-    .step-icon { font-size: 0.9rem; width: 18px; text-align: center; flex-shrink: 0; }
+    .install-step.active { color: var(--text); border-color: var(--accent); }
+    .install-step.done   { color: var(--watch); border-color: var(--watch-bd); }
+    .install-step.error  { color: var(--skip);  border-color: var(--skip-bd);  }
+    .step-icon    { font-size: .9rem; width: 18px; text-align: center; flex-shrink: 0; }
     .step-spinner {
       width: 14px; height: 14px; flex-shrink: 0;
-      border: 2px solid var(--border2);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
+      border: 2px solid var(--border2); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .7s linear infinite;
     }
 
-    /* indeterminate bar */
     .model-track {
-      width: 100%;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 16px;
-      position: relative;
+      width: 100%; height: 3px; background: var(--border);
+      border-radius: 2px; overflow: hidden; margin-bottom: 14px; position: relative;
     }
     .model-bar {
-      position: absolute;
-      left: 0; top: 0; height: 100%;
+      position: absolute; left: 0; top: 0; height: 100%;
       background: linear-gradient(90deg, var(--accent), #60a5fa);
-      border-radius: 2px;
-      width: 40%;
+      border-radius: 2px; width: 40%;
       animation: indeterminate 1.6s cubic-bezier(.4,0,.6,1) infinite;
     }
-    .model-bar.done {
-      animation: none;
-      width: 100%;
-      transition: width .4s ease;
-    }
-    @keyframes indeterminate {
-      0%   { left: -40%; }
-      100% { left: 110%; }
-    }
+    .model-bar.done { animation: none; width: 100%; transition: width .4s ease; }
+    @keyframes indeterminate { 0%{left:-40%} 100%{left:110%} }
 
-    #model-status {
-      font-size: 0.82rem;
-      color: var(--sub);
-      line-height: 1.6;
-      max-width: 320px;
-      min-height: 2em;
-    }
+    #model-status { font-size: .82rem; color: var(--sub); line-height: 1.6; max-width: 320px; min-height: 2em; }
+    .model-ready-msg { display:none; align-items:center; gap:7px; font-size:.85rem; font-weight:700; color:var(--watch); }
+    .model-ready-msg.visible { display:flex; }
 
-    .model-ready-msg {
-      display: none;
-      align-items: center;
-      gap: 7px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--watch);
-    }
-    .model-ready-msg.visible { display: flex; }
-
-    /* ── Mood screen ── */
+    /* ─────────────────────────────────────────────────────────── */
+    /* Mood screen                                                  */
+    /* ─────────────────────────────────────────────────────────── */
     .section-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.8px;
-      color: var(--sub);
-      margin-bottom: 2px;
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.8px; color: var(--sub); margin-bottom: 2px;
     }
-
-    .mood-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
+    .mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .mood-btn {
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: var(--r);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: 600;
-      padding: 20px 12px 16px;
-      text-align: center;
-      transition: border-color .15s, background .15s, box-shadow .15s;
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: var(--r); color: var(--text); cursor: pointer;
+      font-size: .95rem; font-weight: 600; padding: 20px 12px 16px;
+      text-align: center; transition: border-color .15s, background .15s, box-shadow .15s;
       line-height: 1.3;
     }
     .mood-btn:hover { border-color: var(--border2); background: var(--surface2); }
     .mood-btn.selected {
-      border-color: var(--accent);
-      background: var(--accent-dim);
+      border-color: var(--accent); background: var(--accent-dim);
       box-shadow: 0 0 0 1px var(--accent), 0 0 24px var(--accent-glow);
     }
     .mood-emoji { display: block; font-size: 2rem; margin-bottom: 8px; }
 
     .cta-btn {
-      background: var(--accent);
-      border: none;
-      border-radius: var(--r);
-      color: #fff;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 16px;
-      width: 100%;
-      letter-spacing: 0.3px;
+      background: var(--accent); border: none; border-radius: var(--r);
+      color: #fff; cursor: pointer; font-size: 1rem; font-weight: 700;
+      padding: 16px; width: 100%; letter-spacing: .3px;
       transition: background .15s, transform .1s, box-shadow .15s;
     }
-    .cta-btn:hover:not(:disabled) {
-      background: #6a58e5;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 28px var(--accent-glow);
-    }
-    .cta-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .cta-btn:hover:not(:disabled) { background:#6a58e5; transform:translateY(-1px); box-shadow:0 8px 28px var(--accent-glow); }
+    .cta-btn:disabled { opacity: .35; cursor: not-allowed; }
 
-    /* ── Search/loading screen ── */
-    #loading-screen {
-      align-items: center;
-      padding: 48px 0;
-      text-align: center;
-      gap: 22px;
-    }
-
+    /* ─────────────────────────────────────────────────────────── */
+    /* Search loading screen                                        */
+    /* ─────────────────────────────────────────────────────────── */
+    #loading-screen { align-items: center; padding: 48px 0; text-align: center; gap: 22px; }
     .spinner {
       width: 52px; height: 52px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin .75s linear infinite;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .75s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    #status-text { color: var(--sub); font-size: .88rem; max-width: 300px; line-height: 1.6; min-height: 2.8em; }
+    .progress-track { width: 280px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #60a5fa); border-radius: 2px; width: 0%; transition: width .5s ease; }
+    .analyzed-count { font-size: .75rem; color: var(--sub); letter-spacing: .5px; }
 
-    #status-text {
-      color: var(--sub);
-      font-size: 0.88rem;
-      max-width: 300px;
-      line-height: 1.6;
-      min-height: 2.8em;
-    }
+    /* ─────────────────────────────────────────────────────────── */
+    /* Results screen                                               */
+    /* ─────────────────────────────────────────────────────────── */
+    .counter { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--sub); text-align: center; }
 
-    .progress-track {
-      width: 280px; height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    #progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), #60a5fa);
-      border-radius: 2px;
-      width: 0%;
-      transition: width .5s ease;
-    }
-
-    .analyzed-count { font-size: 0.75rem; color: var(--sub); letter-spacing: 0.5px; }
-
-    /* ── Results screen ── */
-    .counter {
-      font-size: 0.7rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 2px;
-      color: var(--sub); text-align: center;
-    }
-
-    .video-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .thumb-wrap {
-      position: relative; width: 100%;
-      aspect-ratio: 16 / 9;
-      background: var(--surface2);
-      overflow: hidden;
-    }
+    .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+    .thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: var(--surface2); overflow: hidden; }
     .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     .verdict-badge {
       position: absolute; top: 12px; right: 12px;
       padding: 7px 14px; border-radius: 100px;
-      font-size: 0.78rem; font-weight: 800;
-      letter-spacing: 0.8px; text-transform: uppercase;
-      backdrop-filter: blur(14px) saturate(1.5);
-      -webkit-backdrop-filter: blur(14px) saturate(1.5);
+      font-size: .78rem; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+      backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5);
     }
     .verdict-badge.watch { background: var(--watch-bg); color: var(--watch); border: 1.5px solid var(--watch-bd); }
     .verdict-badge.skip  { background: var(--skip-bg);  color: var(--skip);  border: 1.5px solid var(--skip-bd);  }
 
     .card-body { padding: 20px; }
-
-    .video-title  { font-size: 1rem; font-weight: 700; line-height: 1.4; margin-bottom: 3px; }
-    .video-channel { font-size: 0.8rem; color: var(--sub); margin-bottom: 18px; }
+    .video-title   { font-size: 1rem; font-weight: 700; line-height: 1.4; margin-bottom: 3px; }
+    .video-channel { font-size: .8rem; color: var(--sub); margin-bottom: 16px; }
 
     .score-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
-    .verdict-word { font-size: 1.55rem; font-weight: 900; letter-spacing: -0.5px; }
+    .verdict-word { font-size: 1.55rem; font-weight: 900; letter-spacing: -.5px; }
     .verdict-word.watch { color: var(--watch); }
     .verdict-word.skip  { color: var(--skip);  }
     .score-label { margin-left: auto; font-size: 1rem; font-weight: 800; }
@@ -345,49 +236,67 @@
     .score-bar   { height: 100%; border-radius: 3px; transition: width .7s cubic-bezier(.4,0,.2,1); }
 
     .meta-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .vibe-pill {
-      padding: 4px 11px; border-radius: 100px;
-      font-size: 0.7rem; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 1.2px;
-    }
-    .vibe-hype    { background: rgba(249,115,22,.15); color: var(--hype);    border: 1px solid rgba(249,115,22,.3); }
-    .vibe-calm    { background: rgba(59,130,246,.15);  color: var(--calm);    border: 1px solid rgba(59,130,246,.3); }
-    .vibe-deep    { background: rgba(139,92,246,.15);  color: var(--deep);    border: 1px solid rgba(139,92,246,.3); }
-    .vibe-intense { background: rgba(239,68,68,.15);   color: var(--intense); border: 1px solid rgba(239,68,68,.3); }
-    .stats-pill { font-size: 0.75rem; color: var(--sub); }
+    .vibe-pill { padding: 4px 11px; border-radius: 100px; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
+    .vibe-hype    { background:rgba(249,115,22,.15); color:var(--hype);    border:1px solid rgba(249,115,22,.3); }
+    .vibe-calm    { background:rgba(59,130,246,.15);  color:var(--calm);    border:1px solid rgba(59,130,246,.3); }
+    .vibe-deep    { background:rgba(139,92,246,.15);  color:var(--deep);    border:1px solid rgba(139,92,246,.3); }
+    .vibe-intense { background:rgba(239,68,68,.15);   color:var(--intense); border:1px solid rgba(239,68,68,.3);  }
+    .stats-pill { font-size: .75rem; color: var(--sub); }
 
     .reason-text {
-      font-size: 0.875rem; color: var(--sub); line-height: 1.6;
-      font-style: italic;
-      border-left: 3px solid var(--border2); padding-left: 12px;
-      margin-bottom: 18px;
+      font-size: .875rem; color: var(--sub); line-height: 1.6; font-style: italic;
+      border-left: 3px solid var(--border2); padding-left: 12px; margin-bottom: 16px;
     }
 
-    .actions { display: flex; gap: 10px; }
-
+    /* primary actions */
+    .actions { display: flex; gap: 10px; margin-bottom: 12px; }
     .btn-yt {
       flex: 1; background: #ff0000; border: none; border-radius: var(--r);
-      color: #fff; cursor: pointer; font-size: 0.88rem; font-weight: 700;
+      color: #fff; cursor: pointer; font-size: .88rem; font-weight: 700;
       padding: 13px 14px; text-decoration: none; text-align: center;
       display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: background .15s, transform .1s;
     }
     .btn-yt:hover { background: #cc0000; transform: translateY(-1px); }
-
     .btn-next {
-      background: var(--surface2); border: 1.5px solid var(--border2);
-      border-radius: var(--r); color: var(--text); cursor: pointer;
-      font-size: 0.88rem; font-weight: 700; padding: 13px 18px;
-      white-space: nowrap; transition: border-color .15s, color .15s;
+      background: var(--surface2); border: 1.5px solid var(--border2); border-radius: var(--r);
+      color: var(--text); cursor: pointer; font-size: .88rem; font-weight: 700;
+      padding: 13px 18px; white-space: nowrap; transition: border-color .15s, color .15s;
     }
     .btn-next:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-    .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-next:disabled { opacity: .3; cursor: not-allowed; }
 
+    /* reaction buttons (like / watched) */
+    .reactions {
+      display: flex; gap: 10px;
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .react-btn {
+      flex: 1; background: var(--surface2); border: 1.5px solid var(--border2);
+      border-radius: var(--r); color: var(--sub); cursor: pointer;
+      font-size: .88rem; font-weight: 600; padding: 11px;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all .15s;
+    }
+    .react-btn:hover { border-color: var(--border2); background: var(--surface); }
+    .react-btn.liked   { border-color: var(--like-bd); color: var(--like); background: var(--like-bg); }
+    .react-btn.watched { border-color: var(--watch-bd); color: var(--watch); background: var(--watch-bg); }
+
+    /* footer row */
+    .results-footer { display: flex; gap: 10px; }
+    .btn-secondary {
+      flex: 1; background: transparent; border: 1.5px solid var(--border);
+      border-radius: var(--r); color: var(--sub); cursor: pointer;
+      font-size: .83rem; font-weight: 600; padding: 11px; text-align: center;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* queue dots */
     .queue-dots { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; padding: 2px 0; }
     .q-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--border2); cursor: pointer;
-      transition: background .2s, transform .15s;
+      width: 7px; height: 7px; border-radius: 50%; background: var(--border2);
+      cursor: pointer; transition: background .2s, transform .15s;
     }
     .q-dot:hover { transform: scale(1.4); }
     .q-dot.active  { background: var(--accent); transform: scale(1.3); }
@@ -395,22 +304,93 @@
     .q-dot.watch   { background: var(--watch); }
     .q-dot.skip    { background: var(--skip); }
 
-    .btn-restart {
-      background: transparent; border: 1.5px solid var(--border);
-      border-radius: var(--r); color: var(--sub); cursor: pointer;
-      font-size: 0.83rem; font-weight: 600; padding: 11px; text-align: center;
-      transition: border-color .15s, color .15s;
-    }
-    .btn-restart:hover { border-color: var(--accent); color: var(--accent); }
-
-    .analyzing-badge { display: none; font-size: 0.72rem; color: var(--accent); text-align: center; }
+    .analyzing-badge { display: none; font-size: .72rem; color: var(--accent); text-align: center; }
     .analyzing-badge.visible { display: block; }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* History screen                                               */
+    /* ─────────────────────────────────────────────────────────── */
+    #history-screen { gap: 14px; }
+
+    .hist-header { display: flex; align-items: center; gap: 10px; }
+    .hist-back {
+      background: var(--surface); border: 1.5px solid var(--border2);
+      border-radius: 100px; color: var(--sub); cursor: pointer;
+      font-size: .82rem; font-weight: 700; padding: 7px 14px;
+      transition: all .15s; flex-shrink: 0;
+    }
+    .hist-back:hover { border-color: var(--accent); color: var(--accent); }
+    .hist-title { font-size: 1.1rem; font-weight: 800; }
+    .hist-stats { margin-left: auto; font-size: .72rem; color: var(--sub); text-align: right; line-height: 1.5; }
+
+    .filter-tabs { display: flex; gap: 8px; }
+    .filter-tab {
+      flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 100px; color: var(--sub); cursor: pointer;
+      font-size: .8rem; font-weight: 700; padding: 8px 14px; text-align: center;
+      transition: all .15s;
+    }
+    .filter-tab:hover { border-color: var(--border2); }
+    .filter-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+    .hist-list { display: flex; flex-direction: column; gap: 10px; }
+    .hist-empty { text-align: center; color: var(--sub); font-size: .88rem; padding: 48px 0; }
+
+    /* compact history card */
+    .hcard {
+      display: flex; gap: 12px; padding: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; transition: border-color .15s;
+    }
+    .hcard:hover { border-color: var(--border2); }
+    .hcard-thumb {
+      width: 108px; height: 61px; object-fit: cover;
+      border-radius: 8px; flex-shrink: 0; background: var(--surface2);
+    }
+    .hcard-body { flex: 1; min-width: 0; }
+    .hcard-title {
+      font-size: .85rem; font-weight: 700; line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;
+    }
+    .hcard-meta {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: .72rem; color: var(--sub); margin-bottom: 4px;
+    }
+    .hcard-reason {
+      font-size: .72rem; color: var(--sub); font-style: italic;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+    .hcard-footer { display: flex; align-items: center; gap: 7px; }
+    .hcard-date { font-size: .68rem; color: var(--sub); margin-right: auto; }
+    .hcard-btn {
+      background: none; border: 1.5px solid var(--border2);
+      border-radius: 8px; padding: 3px 10px; cursor: pointer;
+      font-size: .75rem; color: var(--sub); transition: all .15s;
+    }
+    .hcard-btn:hover { border-color: var(--border2); }
+    .hcard-btn.liked   { border-color: var(--like-bd); color: var(--like); background: var(--like-bg); }
+    .hcard-btn.watched { border-color: var(--watch-bd); color: var(--watch); background: var(--watch-bg); }
+
+    /* small score badge */
+    .score-badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 7px; border-radius: 100px;
+      font-size: .68rem; font-weight: 800;
+      background: var(--surface2); border: 1px solid var(--border2);
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>FocusFeed</h1>
-    <p>AI picks your one video worth watching today.</p>
+    <div class="header-title">
+      <h1>FocusFeed</h1>
+      <p>AI picks your one video worth watching today.</p>
+    </div>
+    <button class="history-btn" id="history-btn" onclick="openHistory()">
+      📚 History <span class="h-count" id="h-count"></span>
+    </button>
   </header>
 
   <main>
@@ -420,11 +400,10 @@
       <div class="model-icon">🧠</div>
       <div class="model-heading">Loading AI Vision Model</div>
 
-      <!-- static model info card -->
       <div class="model-info-card">
         <div class="model-info-row">
           <span class="model-info-key">Model</span>
-          <span class="model-info-val accent" id="info-model">mlx-community/Qwen2-VL-7B-Instruct-4bit</span>
+          <span class="model-info-val accent">mlx-community/Qwen2-VL-7B-Instruct-4bit</span>
         </div>
         <div class="model-info-row">
           <span class="model-info-key">Type</span>
@@ -444,7 +423,6 @@
         </div>
       </div>
 
-      <!-- install steps -->
       <div class="install-steps">
         <div class="install-step" id="step-cache">
           <div class="step-icon">📦</div>
@@ -452,11 +430,11 @@
         </div>
         <div class="install-step" id="step-download">
           <div class="step-icon">⬇︎</div>
-          <div style="flex:1; min-width:0;">
+          <div style="flex:1;min-width:0">
             <div>Download weights (first run only)</div>
-            <div id="dl-text" style="display:none; font-size:0.72rem; color:var(--accent); margin-top:3px; font-variant-numeric:tabular-nums;"></div>
-            <div id="dl-track" style="display:none; height:2px; background:var(--border2); border-radius:1px; margin-top:5px; overflow:hidden;">
-              <div id="dl-bar" style="height:100%; background:var(--accent); width:0%; transition:width .6s ease; border-radius:1px;"></div>
+            <div id="dl-text"  style="display:none;font-size:.72rem;color:var(--accent);margin-top:3px;font-variant-numeric:tabular-nums;"></div>
+            <div id="dl-track" style="display:none;height:2px;background:var(--border2);border-radius:1px;margin-top:5px;overflow:hidden;">
+              <div id="dl-bar" style="height:100%;background:var(--accent);width:0%;transition:width .6s ease;border-radius:1px;"></div>
             </div>
           </div>
         </div>
@@ -466,15 +444,9 @@
         </div>
       </div>
 
-      <div class="model-track">
-        <div class="model-bar" id="model-bar"></div>
-      </div>
-
+      <div class="model-track"><div class="model-bar" id="model-bar"></div></div>
       <div id="model-status">Initialising…</div>
-
-      <div class="model-ready-msg" id="model-ready-msg">
-        <span>✓</span><span>Model ready — select your mood below</span>
-      </div>
+      <div class="model-ready-msg" id="model-ready-msg"><span>✓</span><span>Model ready — select your mood below</span></div>
     </div>
 
     <!-- ── 2. Mood selection ── -->
@@ -482,24 +454,16 @@
       <div>
         <div class="section-label">How are you feeling right now?</div>
         <div class="mood-grid">
-          <button class="mood-btn" data-mood="need energy">
-            <span class="mood-emoji">⚡</span>Need energy
-          </button>
-          <button class="mood-btn" data-mood="feeling lazy">
-            <span class="mood-emoji">😴</span>Feeling lazy
-          </button>
-          <button class="mood-btn" data-mood="want to focus">
-            <span class="mood-emoji">🎯</span>Want to focus
-          </button>
-          <button class="mood-btn" data-mood="need discipline">
-            <span class="mood-emoji">🔥</span>Need discipline
-          </button>
+          <button class="mood-btn" data-mood="need energy"><span class="mood-emoji">⚡</span>Need energy</button>
+          <button class="mood-btn" data-mood="feeling lazy"><span class="mood-emoji">😴</span>Feeling lazy</button>
+          <button class="mood-btn" data-mood="want to focus"><span class="mood-emoji">🎯</span>Want to focus</button>
+          <button class="mood-btn" data-mood="need discipline"><span class="mood-emoji">🔥</span>Need discipline</button>
         </div>
       </div>
       <button class="cta-btn" id="go-btn" disabled>Find My Video →</button>
     </div>
 
-    <!-- ── 3. Searching + analyzing ── -->
+    <!-- ── 3. Searching ── -->
     <div id="loading-screen" class="screen">
       <div class="spinner"></div>
       <div id="status-text">Connecting…</div>
@@ -534,17 +498,41 @@
           <div class="reason-text" id="reason-text"></div>
 
           <div class="actions">
-            <a class="btn-yt" id="yt-link" href="#" target="_blank" rel="noopener noreferrer">
-              ▶ Watch on YouTube
-            </a>
+            <a class="btn-yt" id="yt-link" href="#" target="_blank" rel="noopener noreferrer">▶ Watch on YouTube</a>
             <button class="btn-next" id="next-btn" disabled>Next →</button>
+          </div>
+
+          <div class="reactions">
+            <button class="react-btn" id="like-btn"    onclick="doLike()">♡ Like</button>
+            <button class="react-btn" id="watched-btn" onclick="doWatched()">○ Watched</button>
           </div>
         </div>
       </div>
 
       <div class="analyzing-badge" id="analyzing-badge"></div>
       <div class="queue-dots" id="queue-dots"></div>
-      <button class="btn-restart" id="restart-btn">← Change mood</button>
+
+      <div class="results-footer">
+        <button class="btn-secondary" id="restart-btn">← Change mood</button>
+        <button class="btn-secondary" onclick="openHistory()">📚 History</button>
+      </div>
+    </div>
+
+    <!-- ── 5. History ── -->
+    <div id="history-screen" class="screen">
+      <div class="hist-header">
+        <button class="hist-back" id="hist-back-btn">← Back</button>
+        <div class="hist-title">Watch History</div>
+        <div class="hist-stats" id="hist-stats"></div>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all"     onclick="setFilter('all')">All</button>
+        <button class="filter-tab"        data-filter="liked"   onclick="setFilter('liked')">❤ Liked</button>
+        <button class="filter-tab"        data-filter="watched" onclick="setFilter('watched')">✓ Watched</button>
+      </div>
+
+      <div class="hist-list" id="hist-list"></div>
     </div>
 
   </main>
@@ -552,17 +540,21 @@
   <script>
     // ── State ────────────────────────────────────────────────────────────────
     let selectedMood  = null;
-    let videos        = [];
+    let videos        = [];     // current session results, sorted by score
     let currentId     = null;
     let totalExpected = 10;
     let analyzed      = 0;
     let streamDone    = false;
+    let prevScreen    = null;   // screen to return to from history
+    let histFilter    = 'all';
+    let histItems     = [];
 
     // ── DOM ───────────────────────────────────────────────────────────────────
     const modelScreen    = document.getElementById('model-screen');
     const moodScreen     = document.getElementById('mood-screen');
     const loadingScreen  = document.getElementById('loading-screen');
     const resultsScreen  = document.getElementById('results-screen');
+    const historyScreen  = document.getElementById('history-screen');
     const modelStatusEl  = document.getElementById('model-status');
     const modelBar       = document.getElementById('model-bar');
     const modelReadyMsg  = document.getElementById('model-ready-msg');
@@ -586,14 +578,17 @@
     const reasonText     = document.getElementById('reason-text');
     const ytLink         = document.getElementById('yt-link');
     const nextBtn        = document.getElementById('next-btn');
+    const likeBtn        = document.getElementById('like-btn');
+    const watchedBtn     = document.getElementById('watched-btn');
     const restartBtn     = document.getElementById('restart-btn');
     const queueDots      = document.getElementById('queue-dots');
     const analyzingBadge = document.getElementById('analyzing-badge');
+    const hCount         = document.getElementById('h-count');
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+    const ALL_SCREENS = [modelScreen, moodScreen, loadingScreen, resultsScreen, historyScreen];
     function showScreen(el) {
-      [modelScreen, moodScreen, loadingScreen, resultsScreen]
-        .forEach(s => s.classList.remove('active'));
+      ALL_SCREENS.forEach(s => s.classList.remove('active'));
       el.classList.add('active');
     }
 
@@ -604,49 +599,58 @@
       if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
       return String(n);
     }
-
     function scoreColor(s) {
       if (s <= 3) return '#ef4444';
       if (s <= 5) return '#f97316';
       if (s <= 7) return '#eab308';
       return '#22c55e';
     }
-
+    function fmtDate(iso) {
+      const d = new Date(iso + (iso.includes('T') ? '' : 'Z'));
+      const now = new Date();
+      const diff = (now - d) / 1000;
+      if (diff < 86400)  return 'Today';
+      if (diff < 172800) return 'Yesterday';
+      return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    }
     function currentIdx() { return videos.findIndex(v => v.id === currentId); }
+
+    // ── History count badge ───────────────────────────────────────────────────
+    async function refreshHistCount() {
+      try {
+        const res = await fetch('/api/history');
+        const items = await res.json();
+        histItems = items;
+        if (items.length > 0) {
+          hCount.textContent = items.length;
+          hCount.classList.add('visible');
+        }
+      } catch {}
+    }
 
     // ── Model loading ─────────────────────────────────────────────────────────
     async function initModel() {
-      // Fast path: if server already has model loaded (e.g. page refresh), skip screen
       try {
         const res = await fetch('/api/model/status');
         const { ready } = await res.json();
-        if (ready) { transitionToMood(); return; }
+        if (ready) { await refreshHistCount(); transitionToMood(); return; }
       } catch {}
-
-      // Show model screen and stream progress
       showScreen(modelScreen);
       streamModelLoad();
     }
 
     async function streamModelLoad() {
       let resp;
-      try {
-        resp = await fetch('/api/model/load');
-      } catch (e) {
-        modelStatusEl.textContent = '⚠ Cannot reach server. Is main.py running?';
-        return;
-      }
+      try { resp = await fetch('/api/model/load'); }
+      catch { modelStatusEl.textContent = '⚠ Cannot reach server. Is main.py running?'; return; }
 
-      const reader  = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let   buf     = '';
-
+      const reader = resp.body.getReader(), decoder = new TextDecoder();
+      let buf = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop();
+        const lines = buf.split('\n'); buf = lines.pop();
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           try { handleModelMsg(JSON.parse(line.slice(6))); } catch {}
@@ -655,86 +659,48 @@
     }
 
     function setStep(el, state) {
-      // state: 'active' | 'done' | 'error'
       el.className = `install-step ${state}`;
-      const iconEl = el.querySelector('.step-icon, .step-spinner');
+      const cur = el.querySelector('.step-icon, .step-spinner');
       if (state === 'active') {
-        // Replace icon with spinner
-        const spinner = document.createElement('div');
-        spinner.className = 'step-spinner';
-        iconEl.replaceWith(spinner);
-      } else if (state === 'done') {
-        const icon = document.createElement('div');
-        icon.className = 'step-icon';
-        icon.textContent = '✓';
-        const cur = el.querySelector('.step-icon, .step-spinner');
-        cur.replaceWith(icon);
-      } else if (state === 'error') {
-        const icon = document.createElement('div');
-        icon.className = 'step-icon';
-        icon.textContent = '✕';
-        const cur = el.querySelector('.step-icon, .step-spinner');
-        cur.replaceWith(icon);
+        const sp = document.createElement('div'); sp.className = 'step-spinner';
+        cur.replaceWith(sp);
+      } else if (state === 'done' || state === 'error') {
+        const ic = document.createElement('div'); ic.className = 'step-icon';
+        ic.textContent = state === 'done' ? '✓' : '✕';
+        cur.replaceWith(ic);
       }
     }
 
     function handleModelMsg(msg) {
       if (msg.type === 'progress') {
-        // Live download progress inside the download step
-        const dlText  = document.getElementById('dl-text');
-        const dlTrack = document.getElementById('dl-track');
-        const dlBar   = document.getElementById('dl-bar');
-        dlText.style.display  = 'block';
-        dlTrack.style.display = 'block';
-        dlText.textContent    = msg.message;
-        dlBar.style.width     = (msg.pct || 0) + '%';
+        document.getElementById('dl-text').style.display  = 'block';
+        document.getElementById('dl-track').style.display = 'block';
+        document.getElementById('dl-text').textContent    = msg.message;
+        document.getElementById('dl-bar').style.width     = (msg.pct || 0) + '%';
         return;
       }
-
       if (msg.type === 'status') {
         modelStatusEl.textContent = msg.message;
-        const text = msg.message.toLowerCase();
-
-        if (text.includes('checking')) {
-          setStep(stepCache, 'active');
-        } else if (text.includes('downloading')) {
-          setStep(stepCache, 'done');
-          setStep(stepDownload, 'active');
-        } else if (text.includes('loading') || text.includes('found in cache')) {
-          setStep(stepCache, 'done');
-          setStep(stepDownload, 'done');
-          setStep(stepLoad, 'active');
-        }
-
+        const t = msg.message.toLowerCase();
+        if      (t.includes('checking'))                          setStep(stepCache, 'active');
+        else if (t.includes('downloading'))                       { setStep(stepCache,'done'); setStep(stepDownload,'active'); }
+        else if (t.includes('loading')||t.includes('found in'))   { setStep(stepCache,'done'); setStep(stepDownload,'done'); setStep(stepLoad,'active'); }
       } else if (msg.type === 'ready') {
-        setStep(stepCache, 'done');
-        setStep(stepDownload, 'done');
-        setStep(stepLoad, 'done');
-
+        setStep(stepCache,'done'); setStep(stepDownload,'done'); setStep(stepLoad,'done');
         modelBar.classList.add('done');
         modelStatusEl.style.display = 'none';
         modelReadyMsg.classList.add('visible');
-
-        setTimeout(transitionToMood, 1000);
-
+        setTimeout(async () => { await refreshHistCount(); transitionToMood(); }, 1000);
       } else if (msg.type === 'error') {
-        modelBar.style.background = '#ef4444';
-        modelBar.classList.add('done');
+        modelBar.style.background = '#ef4444'; modelBar.classList.add('done');
         modelStatusEl.innerHTML = `<span style="color:#fca5a5">⚠ ${msg.message}</span>`;
-        // Mark last active step as error
-        [stepLoad, stepDownload, stepCache].forEach(s => {
-          if (s.classList.contains('active')) setStep(s, 'error');
-        });
+        [stepLoad, stepDownload, stepCache].forEach(s => { if (s.classList.contains('active')) setStep(s,'error'); });
       }
     }
 
-    function transitionToMood() {
-      showScreen(moodScreen);
-      // Preserve any already-selected mood
-      if (selectedMood) goBtn.disabled = false;
-    }
+    function transitionToMood() { showScreen(moodScreen); if (selectedMood) goBtn.disabled = false; }
 
-    // ── Mood selection ────────────────────────────────────────────────────────
+    // ── Mood ─────────────────────────────────────────────────────────────────
     document.querySelectorAll('.mood-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
@@ -743,25 +709,20 @@
         goBtn.disabled = false;
       });
     });
-
     goBtn.addEventListener('click', startFeed);
-
     restartBtn.addEventListener('click', () => {
       videos = []; currentId = null; analyzed = 0; streamDone = false;
       showScreen(moodScreen);
     });
-
     nextBtn.addEventListener('click', () => {
       const idx = currentIdx();
       if (idx < videos.length - 1) { currentId = videos[idx+1].id; renderVideo(); }
     });
 
-    // ── Video feed ────────────────────────────────────────────────────────────
+    // ── Feed ─────────────────────────────────────────────────────────────────
     async function startFeed() {
       if (!selectedMood) return;
-      videos = []; currentId = null; analyzed = 0; streamDone = false;
-      totalExpected = 10;
-
+      videos = []; currentId = null; analyzed = 0; streamDone = false; totalExpected = 10;
       showScreen(loadingScreen);
       statusText.textContent = 'Connecting…';
       progressFill.style.width = '0%';
@@ -774,28 +735,21 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mood: selectedMood }),
         });
-      } catch (e) {
-        statusText.textContent = '⚠ Could not reach the server.';
-        return;
-      }
+      } catch { statusText.textContent = '⚠ Could not reach the server.'; return; }
 
       if (!resp.ok) {
         let msg = `Server error ${resp.status}`;
         try { msg = (await resp.json()).detail || msg; } catch {}
-        statusText.textContent = '⚠ ' + msg;
-        return;
+        statusText.textContent = '⚠ ' + msg; return;
       }
 
-      const reader  = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let   buf     = '';
-
+      const reader = resp.body.getReader(), decoder = new TextDecoder();
+      let buf = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop();
+        const lines = buf.split('\n'); buf = lines.pop();
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           try { handleFeedMsg(JSON.parse(line.slice(6))); } catch {}
@@ -807,17 +761,13 @@
       if (msg.type === 'status') {
         statusText.textContent = msg.message;
         if (msg.total) totalExpected = msg.total;
-
       } else if (msg.type === 'video') {
         analyzed++;
         const prevId = currentId;
-
         videos.push(msg.video);
-        videos.sort((a, b) => b.analysis.score - a.analysis.score);
-
+        videos.sort((a,b) => b.analysis.score - a.analysis.score);
         progressFill.style.width = `${(analyzed/totalExpected)*100}%`;
         analyzedCount.textContent = `${analyzed} / ${totalExpected} analyzed`;
-
         if (videos.length === 1) {
           currentId = videos[0].id;
           showScreen(resultsScreen);
@@ -825,21 +775,13 @@
           analyzingBadge.textContent = 'Analyzing remaining videos…';
           analyzingBadge.classList.add('visible');
         } else {
-          if (prevId) {
-            const still = videos.find(v => v.id === prevId);
-            currentId = still ? prevId : videos[0].id;
-          }
+          if (prevId) { const s = videos.find(v => v.id === prevId); currentId = s ? prevId : videos[0].id; }
           renderDots(); renderNav();
-          if (!streamDone) {
-            const rem = totalExpected - analyzed;
-            analyzingBadge.textContent = rem > 0 ? `Analyzing ${rem} more…` : '';
-          }
+          if (!streamDone) analyzingBadge.textContent = totalExpected - analyzed > 0 ? `Analyzing ${totalExpected-analyzed} more…` : '';
         }
-
+        refreshHistCount();
       } else if (msg.type === 'error') {
-        if (videos.length === 0)
-          statusText.innerHTML = `<span style="color:#fca5a5">⚠ ${msg.message}</span>`;
-
+        if (videos.length === 0) statusText.innerHTML = `<span style="color:#fca5a5">⚠ ${msg.message}</span>`;
       } else if (msg.type === 'done') {
         streamDone = true;
         analyzingBadge.classList.remove('visible');
@@ -847,15 +789,14 @@
       }
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // ── Render video card ─────────────────────────────────────────────────────
     function renderVideo() {
       if (!videos.length || !currentId) return;
       const v = videos.find(v => v.id === currentId);
       if (!v) return;
       const a = v.analysis;
 
-      thumbImg.src = v.thumbnail_url;
-      thumbImg.alt = v.title;
+      thumbImg.src = v.thumbnail_url; thumbImg.alt = v.title;
       videoTitle.textContent   = v.title;
       videoChannel.textContent = v.channel;
 
@@ -865,15 +806,20 @@
       verdictWord.textContent  = isWatch ? 'WATCH IT' : 'SKIP IT';
       verdictWord.className    = `verdict-word ${a.verdict}`;
 
-      scoreLabel.textContent      = `${a.score} / 10`;
-      scoreBar.style.width        = `${a.score * 10}%`;
-      scoreBar.style.background   = scoreColor(a.score);
+      scoreLabel.textContent    = `${a.score} / 10`;
+      scoreBar.style.width      = `${a.score * 10}%`;
+      scoreBar.style.background = scoreColor(a.score);
+      vibePill.textContent      = a.vibe.toUpperCase();
+      vibePill.className        = `vibe-pill vibe-${a.vibe}`;
+      statsPill.textContent     = `${fmt(v.view_count)} views · ${fmt(v.like_count)} likes`;
+      reasonText.textContent    = `"${a.reason}"`;
+      ytLink.href               = v.url;
 
-      vibePill.textContent = a.vibe.toUpperCase();
-      vibePill.className   = `vibe-pill vibe-${a.vibe}`;
-      statsPill.textContent = `${fmt(v.view_count)} views · ${fmt(v.like_count)} likes`;
-      reasonText.textContent = `"${a.reason}"`;
-      ytLink.href = v.url;
+      // reaction button states
+      likeBtn.className    = 'react-btn' + (v.liked    ? ' liked'   : '');
+      likeBtn.innerHTML    = (v.liked    ? '♥' : '♡') + ' Like';
+      watchedBtn.className = 'react-btn' + (v.watched  ? ' watched' : '');
+      watchedBtn.innerHTML = (v.watched  ? '✓' : '○') + ' Watched';
 
       renderNav(); renderDots(); updateCounter();
     }
@@ -884,12 +830,10 @@
       nextBtn.disabled    = !hasNext;
       nextBtn.textContent = hasNext ? `Next → (${videos.length-idx-1} more)` : 'No more';
     }
-
     function updateCounter() {
       const idx = currentIdx();
       counter.textContent = `VIDEO ${idx+1} OF ${videos.length}`;
     }
-
     function renderDots() {
       queueDots.innerHTML = '';
       const idx = currentIdx();
@@ -905,7 +849,128 @@
       });
     }
 
-    // ── Boot ──────────────────────────────────────────────────────────────────
+    // ── Like / Watched toggles ────────────────────────────────────────────────
+    async function doLike() {
+      if (!currentId) return;
+      try {
+        const res  = await fetch(`/api/videos/${currentId}/like`, { method: 'POST' });
+        const data = await res.json();
+        const v = videos.find(v => v.id === currentId);
+        if (v) { v.liked = data.liked; renderVideo(); }
+      } catch {}
+    }
+
+    async function doWatched() {
+      if (!currentId) return;
+      try {
+        const res  = await fetch(`/api/videos/${currentId}/watched`, { method: 'POST' });
+        const data = await res.json();
+        const v = videos.find(v => v.id === currentId);
+        if (v) { v.watched = data.watched; renderVideo(); }
+      } catch {}
+    }
+
+    // ── History screen ────────────────────────────────────────────────────────
+    function openHistory() {
+      prevScreen = ALL_SCREENS.find(s => s.classList.contains('active')) || moodScreen;
+      document.getElementById('hist-back-btn').onclick = () => showScreen(prevScreen);
+      loadHistory();
+      showScreen(historyScreen);
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history');
+        histItems = await res.json();
+      } catch { histItems = []; }
+      renderHistory();
+    }
+
+    function setFilter(f) {
+      histFilter = f;
+      document.querySelectorAll('.filter-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.filter === f);
+      });
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list     = document.getElementById('hist-list');
+      const statsEl  = document.getElementById('hist-stats');
+      const liked    = histItems.filter(v => v.liked).length;
+      const watched  = histItems.filter(v => v.watched).length;
+      statsEl.innerHTML = `${histItems.length} videos<br>${liked} liked · ${watched} watched`;
+      if (histItems.length > 0) {
+        hCount.textContent = histItems.length; hCount.classList.add('visible');
+      }
+
+      let items = histItems;
+      if (histFilter === 'liked')   items = histItems.filter(v => v.liked);
+      if (histFilter === 'watched') items = histItems.filter(v => v.watched);
+
+      if (!items.length) {
+        list.innerHTML = `<div class="hist-empty">${histFilter === 'all' ? 'No videos yet. Run a search to start building your history.' : 'Nothing here yet.'}</div>`;
+        return;
+      }
+
+      list.innerHTML = items.map(v => `
+        <div class="hcard">
+          <img class="hcard-thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}" loading="lazy">
+          <div class="hcard-body">
+            <div class="hcard-title">${esc(v.title)}</div>
+            <div class="hcard-meta">
+              <span>${esc(v.channel)}</span>
+              <span class="vibe-pill vibe-${v.vibe}" style="font-size:.62rem;padding:2px 8px;">${v.vibe.toUpperCase()}</span>
+              <span class="score-badge" style="color:${scoreColor(v.score)}">${v.score}/10</span>
+            </div>
+            <div class="hcard-reason">"${esc(v.reason)}"</div>
+            <div class="hcard-footer">
+              <span class="hcard-date">${fmtDate(v.suggested_at)} · ${v.mood}</span>
+              <button class="hcard-btn ${v.liked   ? 'liked'   : ''}" onclick="histToggleLike('${v.id}',this)">♥</button>
+              <button class="hcard-btn ${v.watched ? 'watched' : ''}" onclick="histToggleWatched('${v.id}',this)">✓</button>
+              <a href="${v.url}" target="_blank" rel="noopener" style="color:var(--sub);font-size:.75rem;text-decoration:none;">▶</a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function histToggleLike(id, btn) {
+      try {
+        const res  = await fetch(`/api/videos/${id}/like`, { method: 'POST' });
+        const data = await res.json();
+        btn.classList.toggle('liked', data.liked);
+        const item = histItems.find(v => v.id === id);
+        if (item) { item.liked = data.liked; }
+        // sync in-session video too
+        const sv = videos.find(v => v.id === id);
+        if (sv) { sv.liked = data.liked; if (currentId === id) renderVideo(); }
+        const liked = histItems.filter(v => v.liked).length;
+        const watched = histItems.filter(v => v.watched).length;
+        document.getElementById('hist-stats').innerHTML = `${histItems.length} videos<br>${liked} liked · ${watched} watched`;
+      } catch {}
+    }
+
+    async function histToggleWatched(id, btn) {
+      try {
+        const res  = await fetch(`/api/videos/${id}/watched`, { method: 'POST' });
+        const data = await res.json();
+        btn.classList.toggle('watched', data.watched);
+        const item = histItems.find(v => v.id === id);
+        if (item) { item.watched = data.watched; }
+        const sv = videos.find(v => v.id === id);
+        if (sv) { sv.watched = data.watched; if (currentId === id) renderVideo(); }
+        const liked = histItems.filter(v => v.liked).length;
+        const watched = histItems.filter(v => v.watched).length;
+        document.getElementById('hist-stats').innerHTML = `${histItems.length} videos<br>${liked} liked · ${watched} watched`;
+      } catch {}
+    }
+
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Boot ─────────────────────────────────────────────────────────────────
     initModel();
   </script>
 </body>

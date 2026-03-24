@@ -8,10 +8,12 @@ import os
 import tempfile
 import threading
 import time
+from collections import Counter
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
+import aiosqlite
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -25,14 +27,12 @@ log = logging.getLogger("focusfeed")
 
 YOUTUBE_API_KEY: str = os.getenv("YOUTUBE_API_KEY", "")
 MODEL_NAME: str = os.getenv("MLX_MODEL", "mlx-community/Qwen2-VL-7B-Instruct-4bit")
-YT_BASE = "https://www.googleapis.com/youtube/v3"
+YT_BASE  = "https://www.googleapis.com/youtube/v3"
+DB_PATH  = Path(__file__).parent / "focusfeed.db"
 
-# Vision model — loaded once at startup in a background thread
-_model = None
+_model     = None
 _processor = None
-
-# Model loading log: list of (type, message) tuples streamed to the UI
-_load_log: list[tuple[str, str]] = []
+_load_log: list[tuple]  = []
 _load_done = threading.Event()
 
 MOOD_MAP: dict[str, str] = {
@@ -43,9 +43,90 @@ MOOD_MAP: dict[str, str] = {
 }
 
 
+# ── Database ──────────────────────────────────────────────────────────────────
+
+async def init_db() -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS videos (
+                id            TEXT PRIMARY KEY,
+                title         TEXT NOT NULL,
+                channel       TEXT DEFAULT '',
+                thumbnail_url TEXT DEFAULT '',
+                url           TEXT DEFAULT '',
+                view_count    INTEGER DEFAULT 0,
+                like_count    INTEGER DEFAULT 0,
+                score         INTEGER DEFAULT 5,
+                verdict       TEXT DEFAULT 'watch',
+                reason        TEXT DEFAULT '',
+                vibe          TEXT DEFAULT 'calm',
+                mood          TEXT DEFAULT '',
+                suggested_at  TEXT DEFAULT (datetime('now')),
+                liked         INTEGER DEFAULT 0,
+                watched       INTEGER DEFAULT 0
+            )
+        """)
+        await db.commit()
+
+
+async def _save_video(video: dict, mood: str) -> dict:
+    """Insert video (ignore if already exists to preserve liked/watched state).
+    Returns the video's current liked/watched state."""
+    a = video["analysis"]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            INSERT OR IGNORE INTO videos
+                (id, title, channel, thumbnail_url, url, view_count, like_count,
+                 score, verdict, reason, vibe, mood)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            video["id"], video["title"], video.get("channel", ""),
+            video.get("thumbnail_url", ""), video.get("url", ""),
+            video.get("view_count", 0), video.get("like_count", 0),
+            a["score"], a["verdict"], a["reason"], a["vibe"], mood,
+        ))
+        await db.commit()
+        async with db.execute(
+            "SELECT liked, watched FROM videos WHERE id = ?", (video["id"],)
+        ) as cur:
+            row = await cur.fetchone()
+    return {"liked": bool(row[0]), "watched": bool(row[1])} if row else {"liked": False, "watched": False}
+
+
+async def _get_user_preferences() -> str:
+    """Build a preference context string from the user's liked/watched history."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("""
+            SELECT vibe, channel, score
+            FROM videos
+            WHERE liked = 1 OR watched = 1
+            ORDER BY suggested_at DESC
+            LIMIT 40
+        """) as cur:
+            rows = await cur.fetchall()
+
+    if len(rows) < 3:
+        return ""   # not enough signal yet
+
+    vibes    = Counter(r[0] for r in rows if r[0])
+    channels = Counter(r[1] for r in rows if r[1])
+    avg_score = sum(r[2] for r in rows if r[2]) / len(rows)
+
+    lines = ["User engagement history (calibrate scores accordingly):"]
+    if vibes:
+        top = ", ".join(f"{v} ({c}x)" for v, c in vibes.most_common(3))
+        lines.append(f"• Preferred vibes: {top}")
+    if channels:
+        top = ", ".join(c for c, _ in channels.most_common(3))
+        lines.append(f"• Channels they engage with: {top}")
+    lines.append(f"• Avg score of content they liked: {avg_score:.1f}/10")
+    lines.append("")
+    return "\n".join(lines) + "\n"
+
+
 # ── Model loading ─────────────────────────────────────────────────────────────
 
-def _fmt_bytes(n: int) -> str:
+def _fmt_bytes(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024:
             return f"{n:.1f} {unit}"
@@ -63,7 +144,6 @@ def _is_model_cached() -> bool:
 
 
 def _hf_cached_bytes() -> int:
-    """Sum blob files written so far into the HF cache for this model."""
     cache_dir = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
     blobs = cache_dir / ("models--" + MODEL_NAME.replace("/", "--")) / "blobs"
     if not blobs.exists():
@@ -72,17 +152,15 @@ def _hf_cached_bytes() -> int:
 
 
 def _model_total_bytes() -> int:
-    """Ask HuggingFace Hub for the total model size."""
     try:
         from huggingface_hub import model_info  # type: ignore
         info = model_info(MODEL_NAME)
         return sum(f.size or 0 for f in info.siblings)
     except Exception:
-        return 4_670_000_000  # fallback: ~4.67 GB
+        return 4_670_000_000
 
 
 def _download_progress_poller(total: int) -> None:
-    """Background thread: polls HF cache every 2 s and pushes progress entries."""
     last_pct = -1
     while not _load_done.is_set():
         downloaded = _hf_cached_bytes()
@@ -99,7 +177,6 @@ def _download_progress_poller(total: int) -> None:
 
 
 def _load_model_thread() -> None:
-    """Download (if needed) and load the MLX model. Runs in a daemon thread."""
     global _model, _processor
     try:
         _load_log.append(("status", "Checking model cache…"))
@@ -113,14 +190,12 @@ def _load_model_thread() -> None:
                 "status",
                 f"Downloading {MODEL_NAME} ({_fmt_bytes(total)}) — first run only…",
             ))
-            # Start polling cache size so the UI can show download %
             threading.Thread(target=_download_progress_poller, args=(total,), daemon=True).start()
 
         from mlx_vlm import load  # type: ignore
         _model, _processor = load(MODEL_NAME)
         log.info("MLX model ready.")
         _load_log.append(("ready", f"Model ready — {MODEL_NAME}"))
-
     except Exception as exc:
         log.error("Model load failed: %s", exc)
         _load_log.append(("error", f"Failed to load model: {exc}"))
@@ -130,9 +205,8 @@ def _load_model_thread() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Kick off model loading immediately so it's ready when the user hits Go
-    t = threading.Thread(target=_load_model_thread, daemon=True)
-    t.start()
+    await init_db()
+    threading.Thread(target=_load_model_thread, daemon=True).start()
     yield
 
 
@@ -143,19 +217,15 @@ app = FastAPI(title="FocusFeed", lifespan=lifespan)
 
 @app.get("/api/model/status")
 async def model_status():
-    """Quick JSON check — is the model already loaded? (used on page refresh)"""
     return JSONResponse({"ready": _model is not None})
 
 
 @app.get("/api/model/load")
 async def model_load_stream():
-    """SSE stream that follows model download + load progress."""
-
     async def stream() -> AsyncGenerator[bytes, None]:
         def evt(d: dict) -> bytes:
             return f"data: {json.dumps(d)}\n\n".encode()
 
-        # Already loaded (e.g. page refresh) → instant ready
         if _model is not None:
             yield evt({"type": "ready", "message": f"Model ready — {MODEL_NAME}"})
             return
@@ -163,10 +233,10 @@ async def model_load_stream():
         sent = 0
         while True:
             while sent < len(_load_log):
-                entry = _load_log[sent]
-                kind  = entry[0]
-                payload: dict = {"type": kind, "message": entry[1]}
-                if len(entry) == 3:          # progress entries carry a pct field
+                entry   = _load_log[sent]
+                kind    = entry[0]
+                payload = {"type": kind, "message": entry[1]}
+                if len(entry) == 3:
                     payload["pct"] = entry[2]
                 yield evt(payload)
                 sent += 1
@@ -183,10 +253,9 @@ async def model_load_stream():
     )
 
 
-# ── MLX vision inference ──────────────────────────────────────────────────────
+# ── MLX inference ─────────────────────────────────────────────────────────────
 
-def _infer(video: dict, thumb_path: str) -> dict:
-    """Synchronous MLX vision inference — always called via asyncio.to_thread."""
+def _infer(video: dict, thumb_path: str, pref_context: str = "") -> dict:
     try:
         from mlx_vlm import generate  # type: ignore
         from mlx_vlm.prompt_utils import apply_chat_template  # type: ignore
@@ -199,7 +268,8 @@ def _infer(video: dict, thumb_path: str) -> dict:
 
     comments = "; ".join(video["comments"][:3]) or "none"
     prompt_text = (
-        "You are a strict YouTube video curator. Evaluate this video before recommending it.\n\n"
+        pref_context
+        + "You are a strict YouTube video curator. Evaluate this video before recommending it.\n\n"
         f"Title: {video['title']}\n"
         f"Channel: {video['channel']}\n"
         f"Views: {video['view_count']:,}   Likes: {video['like_count']:,}\n"
@@ -244,14 +314,12 @@ def _parse_analysis(raw: str) -> dict:
             if vibe not in ("hype", "calm", "deep", "intense"):
                 vibe = "calm"
             return {
-                "score": score,
-                "verdict": verdict,
-                "reason": str(r.get("reason", "")).strip()[:200],
-                "vibe": vibe,
+                "score": score, "verdict": verdict,
+                "reason": str(r.get("reason", "")).strip()[:200], "vibe": vibe,
             }
         except (json.JSONDecodeError, ValueError):
             pass
-    log.warning("MLX parse failed. Raw output: %r", raw[:120])
+    log.warning("MLX parse failed. Raw: %r", raw[:120])
     return _default_analysis()
 
 
@@ -265,9 +333,8 @@ async def _yt_search(mood: str) -> list[dict]:
     query = MOOD_MAP.get(mood, f"{mood} motivational productivity")
     async with httpx.AsyncClient(timeout=20.0) as c:
         r = await c.get(f"{YT_BASE}/search", params={
-            "key": YOUTUBE_API_KEY, "q": query,
-            "part": "snippet", "type": "video",
-            "maxResults": 10, "videoDuration": "medium",
+            "key": YOUTUBE_API_KEY, "q": query, "part": "snippet",
+            "type": "video", "maxResults": 10, "videoDuration": "medium",
             "order": "relevance", "relevanceLanguage": "en",
         })
         r.raise_for_status()
@@ -277,31 +344,25 @@ async def _yt_search(mood: str) -> list[dict]:
             return []
 
         r2 = await c.get(f"{YT_BASE}/videos", params={
-            "key": YOUTUBE_API_KEY, "id": ",".join(ids),
-            "part": "statistics,snippet",
+            "key": YOUTUBE_API_KEY, "id": ",".join(ids), "part": "statistics,snippet",
         })
         r2.raise_for_status()
 
         out: list[dict] = []
         for item in r2.json().get("items", []):
             vid = item["id"]
-            sn = item["snippet"]
-            st = item.get("statistics", {})
-            th = sn.get("thumbnails", {})
-            thumb = (
-                th.get("maxres") or th.get("high") or th.get("medium") or {}
-            ).get("url", "")
-
-            comments = await _fetch_comments(c, vid)
+            sn  = item["snippet"]
+            st  = item.get("statistics", {})
+            th  = sn.get("thumbnails", {})
+            thumb = (th.get("maxres") or th.get("high") or th.get("medium") or {}).get("url", "")
             out.append({
-                "id": vid,
-                "title": sn["title"],
+                "id": vid, "title": sn["title"],
                 "description": sn.get("description", "")[:500],
                 "thumbnail_url": thumb,
                 "channel": sn.get("channelTitle", ""),
                 "view_count": int(st.get("viewCount", 0)),
                 "like_count": int(st.get("likeCount", 0)),
-                "comments": comments,
+                "comments": await _fetch_comments(c, vid),
                 "url": f"https://youtube.com/watch?v={vid}",
             })
         return out
@@ -345,12 +406,11 @@ async def index():
 @app.post("/api/feed")
 async def api_feed(req: FeedRequest):
     if not YOUTUBE_API_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="YOUTUBE_API_KEY not set. Copy .env.example → .env and add your key.",
-        )
+        raise HTTPException(500, "YOUTUBE_API_KEY not set. Copy .env.example → .env and add your key.")
     if _model is None:
-        raise HTTPException(status_code=503, detail="Model is still loading. Please wait.")
+        raise HTTPException(503, "Model is still loading. Please wait.")
+
+    pref_context = await _get_user_preferences()
 
     async def stream() -> AsyncGenerator[bytes, None]:
         def evt(d: dict) -> bytes:
@@ -369,22 +429,17 @@ async def api_feed(req: FeedRequest):
             return
 
         n = len(videos)
-        yield evt({
-            "type": "status",
-            "message": f"Found {n} videos. Running AI analysis…",
-            "total": n,
-        })
+        yield evt({"type": "status", "message": f"Found {n} videos. Running AI analysis…", "total": n})
 
         for i, video in enumerate(videos):
-            short = video["title"][:55]
-            yield evt({"type": "status", "message": f"[{i+1}/{n}] {short}…"})
+            yield evt({"type": "status", "message": f"[{i+1}/{n}] {video['title'][:55]}…"})
 
             thumb_path = None
             try:
                 thumb_path = await _dl_thumb(video["thumbnail_url"])
-                analysis = await asyncio.to_thread(_infer, video, thumb_path)
+                analysis  = await asyncio.to_thread(_infer, video, thumb_path, pref_context)
             except Exception as exc:
-                log.error("Analysis error for %s: %s", video["id"], exc)
+                log.error("Analysis error %s: %s", video["id"], exc)
                 analysis = _default_analysis()
             finally:
                 if thumb_path:
@@ -394,6 +449,9 @@ async def api_feed(req: FeedRequest):
                         pass
 
             video["analysis"] = analysis
+            state = await _save_video(video, req.mood)   # auto-save; returns liked/watched
+            video["liked"]   = state["liked"]
+            video["watched"] = state["watched"]
             video.pop("comments", None)
             yield evt({"type": "video", "video": video})
 
@@ -404,6 +462,48 @@ async def api_feed(req: FeedRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── History & reactions ───────────────────────────────────────────────────────
+
+@app.get("/api/history")
+async def get_history():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("""
+            SELECT id, title, channel, thumbnail_url, url,
+                   view_count, like_count, score, verdict, reason,
+                   vibe, mood, suggested_at, liked, watched
+            FROM videos
+            ORDER BY suggested_at DESC
+            LIMIT 300
+        """) as cur:
+            rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/videos/{vid}/like")
+async def toggle_like(vid: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE videos SET liked = NOT liked WHERE id = ?", (vid,))
+        await db.commit()
+        async with db.execute("SELECT liked FROM videos WHERE id = ?", (vid,)) as cur:
+            row = await cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Video not found in history")
+    return {"liked": bool(row[0])}
+
+
+@app.post("/api/videos/{vid}/watched")
+async def toggle_watched(vid: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE videos SET watched = NOT watched WHERE id = ?", (vid,))
+        await db.commit()
+        async with db.execute("SELECT watched FROM videos WHERE id = ?", (vid,)) as cur:
+            row = await cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Video not found in history")
+    return {"watched": bool(row[0])}
 
 
 if __name__ == "__main__":
