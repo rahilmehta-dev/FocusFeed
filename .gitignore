@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .DS_Store
 focusfeed.db
+FocusFeed.app/
+AppIcon.iconset/
+AppIcon.icns

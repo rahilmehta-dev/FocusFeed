@@ -54,19 +54,24 @@ cp .env.example .env
 
 ### 4. Run
 
-**As a native macOS app (recommended):**
+**Option A — Double-clickable .app bundle (recommended):**
+```bash
+./build_app.sh        # run once to build FocusFeed.app
+open FocusFeed.app    # or just double-click it in Finder
+```
+`build_app.sh` generates the icon, assembles the bundle, and registers it with macOS. After that it's a normal double-clickable app — no Terminal needed.
+
+**Option B — Native window from Terminal:**
 ```bash
 conda activate focusfeed
 python app.py
 ```
-Opens a native window — no browser needed.
 
-**As a web server (alternative):**
+**Option C — Browser (fallback):**
 ```bash
 conda activate focusfeed
-python main.py
+python main.py        # then open http://localhost:8000
 ```
-Then open **http://localhost:8000** in your browser.
 
 ## MLX model
 
