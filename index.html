@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FocusFeed</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #09090f;
+      --surface:     #111119;
+      --surface2:    #18182a;
+      --border:      #1e1e30;
+      --border2:     #2a2a42;
+      --text:        #e8e8f8;
+      --muted:       #6060880;
+      --sub:         #606088;
+      --accent:      #7c6af7;
+      --accent-dim:  rgba(124,106,247,.18);
+      --accent-glow: rgba(124,106,247,.3);
+      --watch:       #22c55e;
+      --watch-bg:    rgba(34,197,94,.12);
+      --watch-bd:    rgba(34,197,94,.4);
+      --skip:        #ef4444;
+      --skip-bg:     rgba(239,68,68,.12);
+      --skip-bd:     rgba(239,68,68,.4);
+      --hype:        #f97316;
+      --calm:        #3b82f6;
+      --deep:        #8b5cf6;
+      --intense:     #ef4444;
+      --r:           14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 52px 24px 28px;
+    }
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(130deg, #c4b4ff 0%, #7c6af7 45%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      color: var(--sub);
+      margin-top: 7px;
+      font-size: 0.9rem;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Layout ── */
+    main {
+      width: 100%;
+      max-width: 520px;
+      padding: 0 20px;
+    }
+
+    .screen { display: none; flex-direction: column; gap: 18px; }
+    .screen.active { display: flex; }
+
+    /* ── Mood screen ── */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: var(--sub);
+      margin-bottom: 2px;
+    }
+
+    .mood-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mood-btn {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 20px 12px 16px;
+      text-align: center;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+      line-height: 1.3;
+    }
+    .mood-btn:hover { border-color: var(--border2); background: var(--surface2); }
+    .mood-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: 0 0 0 1px var(--accent), 0 0 24px var(--accent-glow);
+    }
+    .mood-emoji { display: block; font-size: 2rem; margin-bottom: 8px; }
+
+    .cta-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--r);
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 16px;
+      width: 100%;
+      letter-spacing: 0.3px;
+      transition: background .15s, transform .1s, box-shadow .15s;
+    }
+    .cta-btn:hover:not(:disabled) {
+      background: #6a58e5;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px var(--accent-glow);
+    }
+    .cta-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Loading screen ── */
+    #loading-screen {
+      align-items: center;
+      padding: 48px 0;
+      text-align: center;
+      gap: 22px;
+    }
+
+    .spinner-wrap { position: relative; width: 52px; height: 52px; }
+    .spinner {
+      width: 52px; height: 52px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #status-text {
+      color: var(--sub);
+      font-size: 0.88rem;
+      max-width: 300px;
+      line-height: 1.6;
+      min-height: 2.8em;
+    }
+
+    .progress-track {
+      width: 280px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #60a5fa);
+      border-radius: 2px;
+      width: 0%;
+      transition: width .5s ease;
+    }
+
+    .analyzed-count {
+      font-size: 0.75rem;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Results screen ── */
+    .counter {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--sub);
+      text-align: center;
+    }
+
+    /* ── Video card ── */
+    .video-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .thumb-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: var(--surface2);
+      overflow: hidden;
+    }
+    .thumb-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .verdict-badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      padding: 7px 14px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      backdrop-filter: blur(14px) saturate(1.5);
+      -webkit-backdrop-filter: blur(14px) saturate(1.5);
+    }
+    .verdict-badge.watch { background: var(--watch-bg); color: var(--watch); border: 1.5px solid var(--watch-bd); }
+    .verdict-badge.skip  { background: var(--skip-bg);  color: var(--skip);  border: 1.5px solid var(--skip-bd);  }
+
+    .card-body { padding: 20px; }
+
+    .video-title {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 3px;
+    }
+    .video-channel {
+      font-size: 0.8rem;
+      color: var(--sub);
+      margin-bottom: 18px;
+    }
+
+    /* score row */
+    .score-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .verdict-word {
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .verdict-word.watch { color: var(--watch); }
+    .verdict-word.skip  { color: var(--skip);  }
+    .score-label {
+      margin-left: auto;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .score-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .score-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .7s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* meta row */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .vibe-pill {
+      padding: 4px 11px;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+    .vibe-hype    { background: rgba(249,115,22,.15); color: var(--hype);    border: 1px solid rgba(249,115,22,.3);  }
+    .vibe-calm    { background: rgba(59,130,246,.15);  color: var(--calm);    border: 1px solid rgba(59,130,246,.3);  }
+    .vibe-deep    { background: rgba(139,92,246,.15);  color: var(--deep);    border: 1px solid rgba(139,92,246,.3);  }
+    .vibe-intense { background: rgba(239,68,68,.15);   color: var(--intense); border: 1px solid rgba(239,68,68,.3);   }
+
+    .stats-pill {
+      font-size: 0.75rem;
+      color: var(--sub);
+    }
+
+    .reason-text {
+      font-size: 0.875rem;
+      color: var(--sub);
+      line-height: 1.6;
+      font-style: italic;
+      border-left: 3px solid var(--border2);
+      padding-left: 12px;
+      margin-bottom: 18px;
+    }
+
+    /* action buttons */
+    .actions { display: flex; gap: 10px; }
+
+    .btn-yt {
+      flex: 1;
+      background: #ff0000;
+      border: none;
+      border-radius: var(--r);
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 13px 14px;
+      text-decoration: none;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background .15s, transform .1s;
+    }
+    .btn-yt:hover { background: #cc0000; transform: translateY(-1px); }
+
+    .btn-next {
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--r);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 13px 18px;
+      white-space: nowrap;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-next:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* queue dots */
+    .queue-dots {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      padding: 2px 0;
+    }
+    .q-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border2);
+      cursor: pointer;
+      transition: background .2s, transform .15s;
+    }
+    .q-dot:hover { transform: scale(1.4); }
+    .q-dot.active  { background: var(--accent); transform: scale(1.3); }
+    .q-dot.passed  { background: var(--sub); }
+    .q-dot.watch   { background: var(--watch); }
+    .q-dot.skip    { background: var(--skip); }
+
+    .btn-restart {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      color: var(--sub);
+      cursor: pointer;
+      font-size: 0.83rem;
+      font-weight: 600;
+      padding: 11px;
+      text-align: center;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-restart:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* in-progress badge during streaming */
+    .analyzing-badge {
+      display: none;
+      font-size: 0.72rem;
+      color: var(--accent);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .analyzing-badge.visible { display: block; }
+
+    /* error state */
+    .error-box {
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.3);
+      border-radius: var(--r);
+      padding: 16px;
+      font-size: 0.88rem;
+      color: #fca5a5;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FocusFeed</h1>
+    <p>AI picks your one video worth watching today.</p>
+  </header>
+
+  <main>
+
+    <!-- ── Mood selection ── -->
+    <div id="mood-screen" class="screen active">
+      <div>
+        <div class="section-label">How are you feeling right now?</div>
+        <div class="mood-grid">
+          <button class="mood-btn" data-mood="need energy">
+            <span class="mood-emoji">⚡</span>Need energy
+          </button>
+          <button class="mood-btn" data-mood="feeling lazy">
+            <span class="mood-emoji">😴</span>Feeling lazy
+          </button>
+          <button class="mood-btn" data-mood="want to focus">
+            <span class="mood-emoji">🎯</span>Want to focus
+          </button>
+          <button class="mood-btn" data-mood="need discipline">
+            <span class="mood-emoji">🔥</span>Need discipline
+          </button>
+        </div>
+      </div>
+      <button class="cta-btn" id="go-btn" disabled>Find My Video →</button>
+    </div>
+
+    <!-- ── Loading ── -->
+    <div id="loading-screen" class="screen">
+      <div class="spinner-wrap"><div class="spinner"></div></div>
+      <div id="status-text">Connecting…</div>
+      <div class="progress-track">
+        <div id="progress-fill"></div>
+      </div>
+      <div class="analyzed-count" id="analyzed-count"></div>
+    </div>
+
+    <!-- ── Results ── -->
+    <div id="results-screen" class="screen">
+      <div class="counter" id="counter">VIDEO 1</div>
+
+      <div class="video-card">
+        <div class="thumb-wrap">
+          <img id="thumb-img" src="" alt="Thumbnail">
+          <div class="verdict-badge" id="verdict-badge"></div>
+        </div>
+        <div class="card-body">
+          <div class="video-title"  id="video-title"></div>
+          <div class="video-channel" id="video-channel"></div>
+
+          <div class="score-row">
+            <div class="verdict-word" id="verdict-word"></div>
+            <div class="score-label"  id="score-label"></div>
+          </div>
+
+          <div class="score-track">
+            <div class="score-bar" id="score-bar"></div>
+          </div>
+
+          <div class="meta-row">
+            <div class="vibe-pill" id="vibe-pill"></div>
+            <div class="stats-pill" id="stats-pill"></div>
+          </div>
+
+          <div class="reason-text" id="reason-text"></div>
+
+          <div class="actions">
+            <a class="btn-yt" id="yt-link" href="#" target="_blank" rel="noopener noreferrer">
+              ▶ Watch on YouTube
+            </a>
+            <button class="btn-next" id="next-btn" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="analyzing-badge" id="analyzing-badge"></div>
+      <div class="queue-dots" id="queue-dots"></div>
+      <button class="btn-restart" id="restart-btn">← Change mood</button>
+    </div>
+
+  </main>
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let selectedMood = null;
+    let videos       = [];      // sorted by score desc after each insert
+    let currentId    = null;    // ID of video on screen (stable through re-sorts)
+    let totalExpected = 10;
+    let analyzed      = 0;
+    let streamDone    = false;
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+    const moodScreen     = document.getElementById('mood-screen');
+    const loadingScreen  = document.getElementById('loading-screen');
+    const resultsScreen  = document.getElementById('results-screen');
+    const goBtn          = document.getElementById('go-btn');
+    const statusText     = document.getElementById('status-text');
+    const progressFill   = document.getElementById('progress-fill');
+    const analyzedCount  = document.getElementById('analyzed-count');
+    const counter        = document.getElementById('counter');
+    const thumbImg       = document.getElementById('thumb-img');
+    const verdictBadge   = document.getElementById('verdict-badge');
+    const videoTitle     = document.getElementById('video-title');
+    const videoChannel   = document.getElementById('video-channel');
+    const verdictWord    = document.getElementById('verdict-word');
+    const scoreLabel     = document.getElementById('score-label');
+    const scoreBar       = document.getElementById('score-bar');
+    const vibePill       = document.getElementById('vibe-pill');
+    const statsPill      = document.getElementById('stats-pill');
+    const reasonText     = document.getElementById('reason-text');
+    const ytLink         = document.getElementById('yt-link');
+    const nextBtn        = document.getElementById('next-btn');
+    const restartBtn     = document.getElementById('restart-btn');
+    const queueDots      = document.getElementById('queue-dots');
+    const analyzingBadge = document.getElementById('analyzing-badge');
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function showScreen(el) {
+      [moodScreen, loadingScreen, resultsScreen].forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function fmt(n) {
+      if (!n) return '0';
+      if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      return String(n);
+    }
+
+    function scoreColor(s) {
+      if (s <= 3) return '#ef4444';
+      if (s <= 5) return '#f97316';
+      if (s <= 7) return '#eab308';
+      return '#22c55e';
+    }
+
+    function currentIdx() {
+      return videos.findIndex(v => v.id === currentId);
+    }
+
+    // ── Mood selection ────────────────────────────────────────────────────────
+    document.querySelectorAll('.mood-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedMood = btn.dataset.mood;
+        goBtn.disabled = false;
+      });
+    });
+
+    goBtn.addEventListener('click', startFeed);
+
+    restartBtn.addEventListener('click', () => {
+      videos = []; currentId = null; analyzed = 0; streamDone = false;
+      showScreen(moodScreen);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const idx = currentIdx();
+      if (idx < videos.length - 1) {
+        currentId = videos[idx + 1].id;
+        renderVideo();
+      }
+    });
+
+    // ── SSE feed ──────────────────────────────────────────────────────────────
+    async function startFeed() {
+      if (!selectedMood) return;
+      videos = []; currentId = null; analyzed = 0; streamDone = false;
+      totalExpected = 10;
+
+      showScreen(loadingScreen);
+      statusText.textContent = 'Connecting…';
+      progressFill.style.width = '0%';
+      analyzedCount.textContent = '';
+
+      let resp;
+      try {
+        resp = await fetch('/api/feed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mood: selectedMood }),
+        });
+      } catch (e) {
+        statusText.textContent = '⚠ Could not reach the server. Is main.py running?';
+        return;
+      }
+
+      if (!resp.ok) {
+        let msg = `Server error ${resp.status}`;
+        try { const j = await resp.json(); msg = j.detail || msg; } catch {}
+        statusText.textContent = '⚠ ' + msg;
+        return;
+      }
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let   buf     = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try { handleMsg(JSON.parse(line.slice(6))); } catch {}
+        }
+      }
+    }
+
+    function handleMsg(msg) {
+      if (msg.type === 'status') {
+        statusText.textContent = msg.message;
+        if (msg.total) totalExpected = msg.total;
+
+      } else if (msg.type === 'video') {
+        analyzed++;
+        const prevId = currentId;
+
+        videos.push(msg.video);
+        videos.sort((a, b) => b.analysis.score - a.analysis.score);
+
+        progressFill.style.width = `${(analyzed / totalExpected) * 100}%`;
+        analyzedCount.textContent = `${analyzed} / ${totalExpected} analyzed`;
+
+        if (videos.length === 1) {
+          // First result — jump to results screen immediately
+          currentId = videos[0].id;
+          showScreen(resultsScreen);
+          renderVideo();
+          analyzingBadge.textContent = `Analyzing remaining videos…`;
+          analyzingBadge.classList.add('visible');
+        } else {
+          // Keep viewing the same video even if it shifts position in sorted list
+          if (prevId) {
+            const still = videos.find(v => v.id === prevId);
+            currentId = still ? prevId : videos[0].id;
+          }
+          renderDots();
+          renderNav();
+
+          // Update analyzing badge count
+          if (!streamDone) {
+            const rem = totalExpected - analyzed;
+            analyzingBadge.textContent = rem > 0 ? `Analyzing ${rem} more…` : '';
+          }
+        }
+
+      } else if (msg.type === 'error') {
+        if (videos.length === 0) {
+          // Show error on loading screen
+          statusText.innerHTML = `<span style="color:#fca5a5">⚠ ${msg.message}</span>`;
+        }
+        // If we already have results, silently skip
+
+      } else if (msg.type === 'done') {
+        streamDone = true;
+        analyzingBadge.classList.remove('visible');
+        if (videos.length > 0) {
+          showScreen(resultsScreen);
+          renderVideo();
+        }
+      }
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function renderVideo() {
+      if (!videos.length || !currentId) return;
+      const v = videos.find(v => v.id === currentId);
+      if (!v) return;
+      const a = v.analysis;
+
+      thumbImg.src = v.thumbnail_url;
+      thumbImg.alt = v.title;
+      videoTitle.textContent   = v.title;
+      videoChannel.textContent = v.channel;
+
+      // Verdict
+      const isWatch = a.verdict === 'watch';
+      verdictBadge.textContent = isWatch ? '✓ WATCH' : '✕ SKIP';
+      verdictBadge.className   = `verdict-badge ${a.verdict}`;
+      verdictWord.textContent  = isWatch ? 'WATCH IT' : 'SKIP IT';
+      verdictWord.className    = `verdict-word ${a.verdict}`;
+
+      // Score
+      scoreLabel.textContent = `${a.score} / 10`;
+      scoreBar.style.width   = `${a.score * 10}%`;
+      scoreBar.style.background = scoreColor(a.score);
+
+      // Vibe
+      vibePill.textContent = a.vibe.toUpperCase();
+      vibePill.className   = `vibe-pill vibe-${a.vibe}`;
+
+      // Stats
+      statsPill.textContent = `${fmt(v.view_count)} views · ${fmt(v.like_count)} likes`;
+
+      // Reason
+      reasonText.textContent = `"${a.reason}"`;
+
+      // Link
+      ytLink.href = v.url;
+
+      renderNav();
+      renderDots();
+      updateCounter();
+    }
+
+    function renderNav() {
+      const idx = currentIdx();
+      const hasNext = idx >= 0 && idx < videos.length - 1;
+      nextBtn.disabled = !hasNext;
+      nextBtn.textContent = hasNext
+        ? `Next → (${videos.length - idx - 1} more)`
+        : 'No more';
+    }
+
+    function updateCounter() {
+      const idx = currentIdx();
+      counter.textContent = `VIDEO ${idx + 1} OF ${videos.length}`;
+    }
+
+    function renderDots() {
+      queueDots.innerHTML = '';
+      const idx = currentIdx();
+      videos.forEach((v, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'q-dot';
+        if (i === idx)      dot.classList.add('active');
+        else if (i < idx)   dot.classList.add('passed');
+        else                dot.classList.add(v.analysis.verdict); // watch | skip
+        dot.title = `${v.analysis.score}/10 — ${v.title}`;
+        dot.addEventListener('click', () => { currentId = v.id; renderVideo(); });
+        queueDots.appendChild(dot);
+      });
+    }
+  </script>
+</body>
+</html>
