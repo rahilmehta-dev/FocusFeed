@@ -7,6 +7,7 @@ import logging
 import os
 import tempfile
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
@@ -44,14 +45,57 @@ MOOD_MAP: dict[str, str] = {
 
 # ── Model loading ─────────────────────────────────────────────────────────────
 
+def _fmt_bytes(n: int) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} GB"
+
+
 def _is_model_cached() -> bool:
-    """Check whether the model weights are already in the HuggingFace cache."""
     try:
         from huggingface_hub import snapshot_download  # type: ignore
         snapshot_download(MODEL_NAME, local_files_only=True)
         return True
     except Exception:
         return False
+
+
+def _hf_cached_bytes() -> int:
+    """Sum blob files written so far into the HF cache for this model."""
+    cache_dir = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
+    blobs = cache_dir / ("models--" + MODEL_NAME.replace("/", "--")) / "blobs"
+    if not blobs.exists():
+        return 0
+    return sum(f.stat().st_size for f in blobs.iterdir() if f.is_file())
+
+
+def _model_total_bytes() -> int:
+    """Ask HuggingFace Hub for the total model size."""
+    try:
+        from huggingface_hub import model_info  # type: ignore
+        info = model_info(MODEL_NAME)
+        return sum(f.size or 0 for f in info.siblings)
+    except Exception:
+        return 4_670_000_000  # fallback: ~4.67 GB
+
+
+def _download_progress_poller(total: int) -> None:
+    """Background thread: polls HF cache every 2 s and pushes progress entries."""
+    last_pct = -1
+    while not _load_done.is_set():
+        downloaded = _hf_cached_bytes()
+        if downloaded > 0 and total > 0:
+            pct = min(99, int(downloaded / total * 100))
+            if pct != last_pct:
+                last_pct = pct
+                _load_log.append((
+                    "progress",
+                    f"Downloading {_fmt_bytes(downloaded)} / {_fmt_bytes(total)}  ({pct}%)",
+                    pct,
+                ))
+        time.sleep(2)
 
 
 def _load_model_thread() -> None:
@@ -64,10 +108,13 @@ def _load_model_thread() -> None:
         if cached:
             _load_log.append(("status", f"Loading {MODEL_NAME} into memory…"))
         else:
+            total = _model_total_bytes()
             _load_log.append((
                 "status",
-                f"Downloading {MODEL_NAME} (~4 GB) — first run only, may take a few minutes…",
+                f"Downloading {MODEL_NAME} ({_fmt_bytes(total)}) — first run only…",
             ))
+            # Start polling cache size so the UI can show download %
+            threading.Thread(target=_download_progress_poller, args=(total,), daemon=True).start()
 
         from mlx_vlm import load  # type: ignore
         _model, _processor = load(MODEL_NAME)
@@ -116,8 +163,12 @@ async def model_load_stream():
         sent = 0
         while True:
             while sent < len(_load_log):
-                kind, msg = _load_log[sent]
-                yield evt({"type": kind, "message": msg})
+                entry = _load_log[sent]
+                kind  = entry[0]
+                payload: dict = {"type": kind, "message": entry[1]}
+                if len(entry) == 3:          # progress entries carry a pct field
+                    payload["pct"] = entry[2]
+                yield evt(payload)
                 sent += 1
                 if kind in ("ready", "error"):
                     return

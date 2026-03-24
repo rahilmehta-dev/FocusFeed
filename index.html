@@ -452,7 +452,13 @@
         </div>
         <div class="install-step" id="step-download">
           <div class="step-icon">⬇︎</div>
-          <span>Download weights (first run only)</span>
+          <div style="flex:1; min-width:0;">
+            <div>Download weights (first run only)</div>
+            <div id="dl-text" style="display:none; font-size:0.72rem; color:var(--accent); margin-top:3px; font-variant-numeric:tabular-nums;"></div>
+            <div id="dl-track" style="display:none; height:2px; background:var(--border2); border-radius:1px; margin-top:5px; overflow:hidden;">
+              <div id="dl-bar" style="height:100%; background:var(--accent); width:0%; transition:width .6s ease; border-radius:1px;"></div>
+            </div>
+          </div>
         </div>
         <div class="install-step" id="step-load">
           <div class="step-icon">⚡</div>
@@ -673,6 +679,18 @@
     }
 
     function handleModelMsg(msg) {
+      if (msg.type === 'progress') {
+        // Live download progress inside the download step
+        const dlText  = document.getElementById('dl-text');
+        const dlTrack = document.getElementById('dl-track');
+        const dlBar   = document.getElementById('dl-bar');
+        dlText.style.display  = 'block';
+        dlTrack.style.display = 'block';
+        dlText.textContent    = msg.message;
+        dlBar.style.width     = (msg.pct || 0) + '%';
+        return;
+      }
+
       if (msg.type === 'status') {
         modelStatusEl.textContent = msg.message;
         const text = msg.message.toLowerCase();
