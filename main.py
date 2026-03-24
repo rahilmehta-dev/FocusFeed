@@ -6,13 +6,15 @@ import json
 import logging
 import os
 import tempfile
+import threading
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 load_dotenv()
@@ -24,34 +26,113 @@ YOUTUBE_API_KEY: str = os.getenv("YOUTUBE_API_KEY", "")
 MODEL_NAME: str = os.getenv("MLX_MODEL", "mlx-community/Qwen2-VL-7B-Instruct-4bit")
 YT_BASE = "https://www.googleapis.com/youtube/v3"
 
-# Lazy-loaded vision model (downloaded on first use, cached by HuggingFace)
+# Vision model — loaded once at startup in a background thread
 _model = None
 _processor = None
 
+# Model loading log: list of (type, message) tuples streamed to the UI
+_load_log: list[tuple[str, str]] = []
+_load_done = threading.Event()
+
 MOOD_MAP: dict[str, str] = {
-    "need energy":    "high energy motivational pump up get moving",
-    "feeling lazy":   "stop being lazy motivation discipline get up",
-    "want to focus":  "deep focus flow state productivity concentration",
+    "need energy":     "high energy motivational pump up get moving",
+    "feeling lazy":    "stop being lazy motivation discipline get up",
+    "want to focus":   "deep focus flow state productivity concentration",
     "need discipline": "self discipline habits consistency success mindset",
 }
 
-app = FastAPI(title="FocusFeed")
+
+# ── Model loading ─────────────────────────────────────────────────────────────
+
+def _is_model_cached() -> bool:
+    """Check whether the model weights are already in the HuggingFace cache."""
+    try:
+        from huggingface_hub import snapshot_download  # type: ignore
+        snapshot_download(MODEL_NAME, local_files_only=True)
+        return True
+    except Exception:
+        return False
+
+
+def _load_model_thread() -> None:
+    """Download (if needed) and load the MLX model. Runs in a daemon thread."""
+    global _model, _processor
+    try:
+        _load_log.append(("status", "Checking model cache…"))
+        cached = _is_model_cached()
+
+        if cached:
+            _load_log.append(("status", f"Loading {MODEL_NAME} into memory…"))
+        else:
+            _load_log.append((
+                "status",
+                f"Downloading {MODEL_NAME} (~4 GB) — first run only, may take a few minutes…",
+            ))
+
+        from mlx_vlm import load  # type: ignore
+        _model, _processor = load(MODEL_NAME)
+        log.info("MLX model ready.")
+        _load_log.append(("ready", f"Model ready — {MODEL_NAME}"))
+
+    except Exception as exc:
+        log.error("Model load failed: %s", exc)
+        _load_log.append(("error", f"Failed to load model: {exc}"))
+    finally:
+        _load_done.set()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Kick off model loading immediately so it's ready when the user hits Go
+    t = threading.Thread(target=_load_model_thread, daemon=True)
+    t.start()
+    yield
+
+
+app = FastAPI(title="FocusFeed", lifespan=lifespan)
+
+
+# ── Model status endpoints ────────────────────────────────────────────────────
+
+@app.get("/api/model/status")
+async def model_status():
+    """Quick JSON check — is the model already loaded? (used on page refresh)"""
+    return JSONResponse({"ready": _model is not None})
+
+
+@app.get("/api/model/load")
+async def model_load_stream():
+    """SSE stream that follows model download + load progress."""
+
+    async def stream() -> AsyncGenerator[bytes, None]:
+        def evt(d: dict) -> bytes:
+            return f"data: {json.dumps(d)}\n\n".encode()
+
+        # Already loaded (e.g. page refresh) → instant ready
+        if _model is not None:
+            yield evt({"type": "ready", "message": f"Model ready — {MODEL_NAME}"})
+            return
+
+        sent = 0
+        while True:
+            while sent < len(_load_log):
+                kind, msg = _load_log[sent]
+                yield evt({"type": kind, "message": msg})
+                sent += 1
+                if kind in ("ready", "error"):
+                    return
+            if _load_done.is_set():
+                break
+            await asyncio.sleep(0.4)
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ── MLX vision inference ──────────────────────────────────────────────────────
-
-def _load_model() -> tuple:
-    global _model, _processor
-    if _model is None:
-        try:
-            from mlx_vlm import load  # type: ignore
-            log.info("Loading MLX model: %s  (first run auto-downloads ~4 GB)", MODEL_NAME)
-            _model, _processor = load(MODEL_NAME)
-            log.info("Model ready.")
-        except ImportError as exc:
-            raise RuntimeError("mlx_vlm not found. Run: pip install mlx-vlm") from exc
-    return _model, _processor
-
 
 def _infer(video: dict, thumb_path: str) -> dict:
     """Synchronous MLX vision inference — always called via asyncio.to_thread."""
@@ -62,7 +143,8 @@ def _infer(video: dict, thumb_path: str) -> dict:
     except ImportError:
         return _default_analysis()
 
-    model, processor = _load_model()
+    if _model is None:
+        return _default_analysis()
 
     comments = "; ".join(video["comments"][:3]) or "none"
     prompt_text = (
@@ -81,21 +163,19 @@ def _infer(video: dict, thumb_path: str) -> dict:
         '"reason":"<one sentence>","vibe":"<hype|calm|deep|intense>"}'
     )
 
-    # Apply the model-specific chat template
     try:
         config = load_config(MODEL_NAME)
-        prompt = apply_chat_template(processor, config, prompt_text, num_images=1)
+        prompt = apply_chat_template(_processor, config, prompt_text, num_images=1)
     except Exception:
-        prompt = prompt_text  # fallback: raw string
+        prompt = prompt_text
 
-    # Generate — handle minor API version differences
     try:
         raw: str = generate(
-            model, processor, prompt, [thumb_path],
+            _model, _processor, prompt, [thumb_path],
             max_tokens=150, temp=0.1, verbose=False,
         )
     except TypeError:
-        raw = generate(model, processor, prompt, thumb_path, max_tokens=150)  # type: ignore
+        raw = generate(_model, _processor, prompt, thumb_path, max_tokens=150)  # type: ignore
 
     return _parse_analysis(str(raw))
 
@@ -218,6 +298,8 @@ async def api_feed(req: FeedRequest):
             status_code=500,
             detail="YOUTUBE_API_KEY not set. Copy .env.example → .env and add your key.",
         )
+    if _model is None:
+        raise HTTPException(status_code=503, detail="Model is still loading. Please wait.")
 
     async def stream() -> AsyncGenerator[bytes, None]:
         def evt(d: dict) -> bytes:
@@ -261,7 +343,7 @@ async def api_feed(req: FeedRequest):
                         pass
 
             video["analysis"] = analysis
-            video.pop("comments", None)  # trim payload
+            video.pop("comments", None)
             yield evt({"type": "video", "video": video})
 
         yield evt({"type": "done"})

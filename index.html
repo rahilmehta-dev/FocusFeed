@@ -14,7 +14,6 @@
       --border:      #1e1e30;
       --border2:     #2a2a42;
       --text:        #e8e8f8;
-      --muted:       #6060880;
       --sub:         #606088;
       --accent:      #7c6af7;
       --accent-dim:  rgba(124,106,247,.18);
@@ -43,7 +42,6 @@
       padding-bottom: 80px;
     }
 
-    /* ── Header ── */
     header {
       text-align: center;
       padding: 52px 24px 28px;
@@ -61,10 +59,8 @@
       color: var(--sub);
       margin-top: 7px;
       font-size: 0.9rem;
-      letter-spacing: 0.2px;
     }
 
-    /* ── Layout ── */
     main {
       width: 100%;
       max-width: 520px;
@@ -73,6 +69,135 @@
 
     .screen { display: none; flex-direction: column; gap: 18px; }
     .screen.active { display: flex; }
+
+    /* ── Model loading screen ── */
+    #model-screen {
+      align-items: center;
+      padding: 24px 0 16px;
+      text-align: center;
+      gap: 0;
+    }
+
+    .model-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      animation: pulse-icon 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse-icon {
+      0%, 100% { transform: scale(1);   opacity: 1;   }
+      50%       { transform: scale(1.1); opacity: .75; }
+    }
+
+    .model-heading {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    /* model info card */
+    .model-info-card {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      text-align: left;
+    }
+
+    .model-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 0.82rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .model-info-row:last-child { border-bottom: none; }
+    .model-info-key  { color: var(--sub); font-weight: 500; }
+    .model-info-val  { color: var(--text); font-weight: 600; font-family: "SF Mono", ui-monospace, monospace; font-size: 0.78rem; }
+    .model-info-val.accent { color: var(--accent); }
+
+    /* install steps */
+    .install-steps {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .install-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: var(--sub);
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: color .3s, border-color .3s;
+    }
+    .install-step.active  { color: var(--text); border-color: var(--accent); }
+    .install-step.done    { color: var(--watch); border-color: rgba(34,197,94,.3); }
+    .install-step.error   { color: var(--skip);  border-color: rgba(239,68,68,.3); }
+
+    .step-icon { font-size: 0.9rem; width: 18px; text-align: center; flex-shrink: 0; }
+    .step-spinner {
+      width: 14px; height: 14px; flex-shrink: 0;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* indeterminate bar */
+    .model-track {
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .model-bar {
+      position: absolute;
+      left: 0; top: 0; height: 100%;
+      background: linear-gradient(90deg, var(--accent), #60a5fa);
+      border-radius: 2px;
+      width: 40%;
+      animation: indeterminate 1.6s cubic-bezier(.4,0,.6,1) infinite;
+    }
+    .model-bar.done {
+      animation: none;
+      width: 100%;
+      transition: width .4s ease;
+    }
+    @keyframes indeterminate {
+      0%   { left: -40%; }
+      100% { left: 110%; }
+    }
+
+    #model-status {
+      font-size: 0.82rem;
+      color: var(--sub);
+      line-height: 1.6;
+      max-width: 320px;
+      min-height: 2em;
+    }
+
+    .model-ready-msg {
+      display: none;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--watch);
+    }
+    .model-ready-msg.visible { display: flex; }
 
     /* ── Mood screen ── */
     .section-label {
@@ -131,7 +256,7 @@
     }
     .cta-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    /* ── Loading screen ── */
+    /* ── Search/loading screen ── */
     #loading-screen {
       align-items: center;
       padding: 48px 0;
@@ -139,7 +264,6 @@
       gap: 22px;
     }
 
-    .spinner-wrap { position: relative; width: 52px; height: 52px; }
     .spinner {
       width: 52px; height: 52px;
       border: 3px solid var(--border);
@@ -158,8 +282,7 @@
     }
 
     .progress-track {
-      width: 280px;
-      height: 3px;
+      width: 280px; height: 3px;
       background: var(--border);
       border-radius: 2px;
       overflow: hidden;
@@ -172,23 +295,15 @@
       transition: width .5s ease;
     }
 
-    .analyzed-count {
-      font-size: 0.75rem;
-      color: var(--sub);
-      letter-spacing: 0.5px;
-    }
+    .analyzed-count { font-size: 0.75rem; color: var(--sub); letter-spacing: 0.5px; }
 
     /* ── Results screen ── */
     .counter {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--sub);
-      text-align: center;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--sub); text-align: center;
     }
 
-    /* ── Video card ── */
     .video-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -197,27 +312,18 @@
     }
 
     .thumb-wrap {
-      position: relative;
-      width: 100%;
+      position: relative; width: 100%;
       aspect-ratio: 16 / 9;
       background: var(--surface2);
       overflow: hidden;
     }
-    .thumb-wrap img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     .verdict-badge {
-      position: absolute;
-      top: 12px; right: 12px;
-      padding: 7px 14px;
-      border-radius: 100px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
+      position: absolute; top: 12px; right: 12px;
+      padding: 7px 14px; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.8px; text-transform: uppercase;
       backdrop-filter: blur(14px) saturate(1.5);
       -webkit-backdrop-filter: blur(14px) saturate(1.5);
     }
@@ -226,139 +332,61 @@
 
     .card-body { padding: 20px; }
 
-    .video-title {
-      font-size: 1rem;
-      font-weight: 700;
-      line-height: 1.4;
-      margin-bottom: 3px;
-    }
-    .video-channel {
-      font-size: 0.8rem;
-      color: var(--sub);
-      margin-bottom: 18px;
-    }
+    .video-title  { font-size: 1rem; font-weight: 700; line-height: 1.4; margin-bottom: 3px; }
+    .video-channel { font-size: 0.8rem; color: var(--sub); margin-bottom: 18px; }
 
-    /* score row */
-    .score-row {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .verdict-word {
-      font-size: 1.55rem;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-    }
+    .score-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+    .verdict-word { font-size: 1.55rem; font-weight: 900; letter-spacing: -0.5px; }
     .verdict-word.watch { color: var(--watch); }
     .verdict-word.skip  { color: var(--skip);  }
-    .score-label {
-      margin-left: auto;
-      font-size: 1rem;
-      font-weight: 800;
-      color: var(--text);
-    }
+    .score-label { margin-left: auto; font-size: 1rem; font-weight: 800; }
 
-    .score-track {
-      height: 6px;
-      background: var(--border);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 14px;
-    }
-    .score-bar {
-      height: 100%;
-      border-radius: 3px;
-      transition: width .7s cubic-bezier(.4,0,.2,1);
-    }
+    .score-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+    .score-bar   { height: 100%; border-radius: 3px; transition: width .7s cubic-bezier(.4,0,.2,1); }
 
-    /* meta row */
-    .meta-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
+    .meta-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .vibe-pill {
-      padding: 4px 11px;
-      border-radius: 100px;
-      font-size: 0.7rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
+      padding: 4px 11px; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 1.2px;
     }
-    .vibe-hype    { background: rgba(249,115,22,.15); color: var(--hype);    border: 1px solid rgba(249,115,22,.3);  }
-    .vibe-calm    { background: rgba(59,130,246,.15);  color: var(--calm);    border: 1px solid rgba(59,130,246,.3);  }
-    .vibe-deep    { background: rgba(139,92,246,.15);  color: var(--deep);    border: 1px solid rgba(139,92,246,.3);  }
-    .vibe-intense { background: rgba(239,68,68,.15);   color: var(--intense); border: 1px solid rgba(239,68,68,.3);   }
-
-    .stats-pill {
-      font-size: 0.75rem;
-      color: var(--sub);
-    }
+    .vibe-hype    { background: rgba(249,115,22,.15); color: var(--hype);    border: 1px solid rgba(249,115,22,.3); }
+    .vibe-calm    { background: rgba(59,130,246,.15);  color: var(--calm);    border: 1px solid rgba(59,130,246,.3); }
+    .vibe-deep    { background: rgba(139,92,246,.15);  color: var(--deep);    border: 1px solid rgba(139,92,246,.3); }
+    .vibe-intense { background: rgba(239,68,68,.15);   color: var(--intense); border: 1px solid rgba(239,68,68,.3); }
+    .stats-pill { font-size: 0.75rem; color: var(--sub); }
 
     .reason-text {
-      font-size: 0.875rem;
-      color: var(--sub);
-      line-height: 1.6;
+      font-size: 0.875rem; color: var(--sub); line-height: 1.6;
       font-style: italic;
-      border-left: 3px solid var(--border2);
-      padding-left: 12px;
+      border-left: 3px solid var(--border2); padding-left: 12px;
       margin-bottom: 18px;
     }
 
-    /* action buttons */
     .actions { display: flex; gap: 10px; }
 
     .btn-yt {
-      flex: 1;
-      background: #ff0000;
-      border: none;
-      border-radius: var(--r);
-      color: #fff;
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: 700;
-      padding: 13px 14px;
-      text-decoration: none;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      flex: 1; background: #ff0000; border: none; border-radius: var(--r);
+      color: #fff; cursor: pointer; font-size: 0.88rem; font-weight: 700;
+      padding: 13px 14px; text-decoration: none; text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: background .15s, transform .1s;
     }
     .btn-yt:hover { background: #cc0000; transform: translateY(-1px); }
 
     .btn-next {
-      background: var(--surface2);
-      border: 1.5px solid var(--border2);
-      border-radius: var(--r);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: 700;
-      padding: 13px 18px;
-      white-space: nowrap;
-      transition: border-color .15s, color .15s;
+      background: var(--surface2); border: 1.5px solid var(--border2);
+      border-radius: var(--r); color: var(--text); cursor: pointer;
+      font-size: 0.88rem; font-weight: 700; padding: 13px 18px;
+      white-space: nowrap; transition: border-color .15s, color .15s;
     }
     .btn-next:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    /* queue dots */
-    .queue-dots {
-      display: flex;
-      justify-content: center;
-      gap: 7px;
-      flex-wrap: wrap;
-      padding: 2px 0;
-    }
+    .queue-dots { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; padding: 2px 0; }
     .q-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--border2);
-      cursor: pointer;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border2); cursor: pointer;
       transition: background .2s, transform .15s;
     }
     .q-dot:hover { transform: scale(1.4); }
@@ -368,39 +396,15 @@
     .q-dot.skip    { background: var(--skip); }
 
     .btn-restart {
-      background: transparent;
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      color: var(--sub);
-      cursor: pointer;
-      font-size: 0.83rem;
-      font-weight: 600;
-      padding: 11px;
-      text-align: center;
+      background: transparent; border: 1.5px solid var(--border);
+      border-radius: var(--r); color: var(--sub); cursor: pointer;
+      font-size: 0.83rem; font-weight: 600; padding: 11px; text-align: center;
       transition: border-color .15s, color .15s;
     }
     .btn-restart:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* in-progress badge during streaming */
-    .analyzing-badge {
-      display: none;
-      font-size: 0.72rem;
-      color: var(--accent);
-      text-align: center;
-      letter-spacing: 0.3px;
-    }
+    .analyzing-badge { display: none; font-size: 0.72rem; color: var(--accent); text-align: center; }
     .analyzing-badge.visible { display: block; }
-
-    /* error state */
-    .error-box {
-      background: rgba(239,68,68,.08);
-      border: 1px solid rgba(239,68,68,.3);
-      border-radius: var(--r);
-      padding: 16px;
-      font-size: 0.88rem;
-      color: #fca5a5;
-      line-height: 1.5;
-    }
   </style>
 </head>
 <body>
@@ -411,8 +415,64 @@
 
   <main>
 
-    <!-- ── Mood selection ── -->
-    <div id="mood-screen" class="screen active">
+    <!-- ── 1. Model loading ── -->
+    <div id="model-screen" class="screen active">
+      <div class="model-icon">🧠</div>
+      <div class="model-heading">Loading AI Vision Model</div>
+
+      <!-- static model info card -->
+      <div class="model-info-card">
+        <div class="model-info-row">
+          <span class="model-info-key">Model</span>
+          <span class="model-info-val accent" id="info-model">mlx-community/Qwen2-VL-7B-Instruct-4bit</span>
+        </div>
+        <div class="model-info-row">
+          <span class="model-info-key">Type</span>
+          <span class="model-info-val">Vision Language Model</span>
+        </div>
+        <div class="model-info-row">
+          <span class="model-info-key">Quantization</span>
+          <span class="model-info-val">4-bit (MLX)</span>
+        </div>
+        <div class="model-info-row">
+          <span class="model-info-key">Size</span>
+          <span class="model-info-val">~4 GB</span>
+        </div>
+        <div class="model-info-row">
+          <span class="model-info-key">Runtime</span>
+          <span class="model-info-val">Apple Silicon (MLX)</span>
+        </div>
+      </div>
+
+      <!-- install steps -->
+      <div class="install-steps">
+        <div class="install-step" id="step-cache">
+          <div class="step-icon">📦</div>
+          <span>Check model cache</span>
+        </div>
+        <div class="install-step" id="step-download">
+          <div class="step-icon">⬇︎</div>
+          <span>Download weights (first run only)</span>
+        </div>
+        <div class="install-step" id="step-load">
+          <div class="step-icon">⚡</div>
+          <span>Load into Apple Silicon memory</span>
+        </div>
+      </div>
+
+      <div class="model-track">
+        <div class="model-bar" id="model-bar"></div>
+      </div>
+
+      <div id="model-status">Initialising…</div>
+
+      <div class="model-ready-msg" id="model-ready-msg">
+        <span>✓</span><span>Model ready — select your mood below</span>
+      </div>
+    </div>
+
+    <!-- ── 2. Mood selection ── -->
+    <div id="mood-screen" class="screen">
       <div>
         <div class="section-label">How are you feeling right now?</div>
         <div class="mood-grid">
@@ -433,17 +493,15 @@
       <button class="cta-btn" id="go-btn" disabled>Find My Video →</button>
     </div>
 
-    <!-- ── Loading ── -->
+    <!-- ── 3. Searching + analyzing ── -->
     <div id="loading-screen" class="screen">
-      <div class="spinner-wrap"><div class="spinner"></div></div>
+      <div class="spinner"></div>
       <div id="status-text">Connecting…</div>
-      <div class="progress-track">
-        <div id="progress-fill"></div>
-      </div>
+      <div class="progress-track"><div id="progress-fill"></div></div>
       <div class="analyzed-count" id="analyzed-count"></div>
     </div>
 
-    <!-- ── Results ── -->
+    <!-- ── 4. Results ── -->
     <div id="results-screen" class="screen">
       <div class="counter" id="counter">VIDEO 1</div>
 
@@ -453,17 +511,14 @@
           <div class="verdict-badge" id="verdict-badge"></div>
         </div>
         <div class="card-body">
-          <div class="video-title"  id="video-title"></div>
+          <div class="video-title"   id="video-title"></div>
           <div class="video-channel" id="video-channel"></div>
 
           <div class="score-row">
             <div class="verdict-word" id="verdict-word"></div>
             <div class="score-label"  id="score-label"></div>
           </div>
-
-          <div class="score-track">
-            <div class="score-bar" id="score-bar"></div>
-          </div>
+          <div class="score-track"><div class="score-bar" id="score-bar"></div></div>
 
           <div class="meta-row">
             <div class="vibe-pill" id="vibe-pill"></div>
@@ -490,17 +545,24 @@
 
   <script>
     // ── State ────────────────────────────────────────────────────────────────
-    let selectedMood = null;
-    let videos       = [];      // sorted by score desc after each insert
-    let currentId    = null;    // ID of video on screen (stable through re-sorts)
+    let selectedMood  = null;
+    let videos        = [];
+    let currentId     = null;
     let totalExpected = 10;
     let analyzed      = 0;
     let streamDone    = false;
 
-    // ── DOM refs ─────────────────────────────────────────────────────────────
+    // ── DOM ───────────────────────────────────────────────────────────────────
+    const modelScreen    = document.getElementById('model-screen');
     const moodScreen     = document.getElementById('mood-screen');
     const loadingScreen  = document.getElementById('loading-screen');
     const resultsScreen  = document.getElementById('results-screen');
+    const modelStatusEl  = document.getElementById('model-status');
+    const modelBar       = document.getElementById('model-bar');
+    const modelReadyMsg  = document.getElementById('model-ready-msg');
+    const stepCache      = document.getElementById('step-cache');
+    const stepDownload   = document.getElementById('step-download');
+    const stepLoad       = document.getElementById('step-load');
     const goBtn          = document.getElementById('go-btn');
     const statusText     = document.getElementById('status-text');
     const progressFill   = document.getElementById('progress-fill');
@@ -524,15 +586,16 @@
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     function showScreen(el) {
-      [moodScreen, loadingScreen, resultsScreen].forEach(s => s.classList.remove('active'));
+      [modelScreen, moodScreen, loadingScreen, resultsScreen]
+        .forEach(s => s.classList.remove('active'));
       el.classList.add('active');
     }
 
     function fmt(n) {
       if (!n) return '0';
-      if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+      if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+      if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
       return String(n);
     }
 
@@ -543,8 +606,114 @@
       return '#22c55e';
     }
 
-    function currentIdx() {
-      return videos.findIndex(v => v.id === currentId);
+    function currentIdx() { return videos.findIndex(v => v.id === currentId); }
+
+    // ── Model loading ─────────────────────────────────────────────────────────
+    async function initModel() {
+      // Fast path: if server already has model loaded (e.g. page refresh), skip screen
+      try {
+        const res = await fetch('/api/model/status');
+        const { ready } = await res.json();
+        if (ready) { transitionToMood(); return; }
+      } catch {}
+
+      // Show model screen and stream progress
+      showScreen(modelScreen);
+      streamModelLoad();
+    }
+
+    async function streamModelLoad() {
+      let resp;
+      try {
+        resp = await fetch('/api/model/load');
+      } catch (e) {
+        modelStatusEl.textContent = '⚠ Cannot reach server. Is main.py running?';
+        return;
+      }
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let   buf     = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try { handleModelMsg(JSON.parse(line.slice(6))); } catch {}
+        }
+      }
+    }
+
+    function setStep(el, state) {
+      // state: 'active' | 'done' | 'error'
+      el.className = `install-step ${state}`;
+      const iconEl = el.querySelector('.step-icon, .step-spinner');
+      if (state === 'active') {
+        // Replace icon with spinner
+        const spinner = document.createElement('div');
+        spinner.className = 'step-spinner';
+        iconEl.replaceWith(spinner);
+      } else if (state === 'done') {
+        const icon = document.createElement('div');
+        icon.className = 'step-icon';
+        icon.textContent = '✓';
+        const cur = el.querySelector('.step-icon, .step-spinner');
+        cur.replaceWith(icon);
+      } else if (state === 'error') {
+        const icon = document.createElement('div');
+        icon.className = 'step-icon';
+        icon.textContent = '✕';
+        const cur = el.querySelector('.step-icon, .step-spinner');
+        cur.replaceWith(icon);
+      }
+    }
+
+    function handleModelMsg(msg) {
+      if (msg.type === 'status') {
+        modelStatusEl.textContent = msg.message;
+        const text = msg.message.toLowerCase();
+
+        if (text.includes('checking')) {
+          setStep(stepCache, 'active');
+        } else if (text.includes('downloading')) {
+          setStep(stepCache, 'done');
+          setStep(stepDownload, 'active');
+        } else if (text.includes('loading') || text.includes('found in cache')) {
+          setStep(stepCache, 'done');
+          setStep(stepDownload, 'done');
+          setStep(stepLoad, 'active');
+        }
+
+      } else if (msg.type === 'ready') {
+        setStep(stepCache, 'done');
+        setStep(stepDownload, 'done');
+        setStep(stepLoad, 'done');
+
+        modelBar.classList.add('done');
+        modelStatusEl.style.display = 'none';
+        modelReadyMsg.classList.add('visible');
+
+        setTimeout(transitionToMood, 1000);
+
+      } else if (msg.type === 'error') {
+        modelBar.style.background = '#ef4444';
+        modelBar.classList.add('done');
+        modelStatusEl.innerHTML = `<span style="color:#fca5a5">⚠ ${msg.message}</span>`;
+        // Mark last active step as error
+        [stepLoad, stepDownload, stepCache].forEach(s => {
+          if (s.classList.contains('active')) setStep(s, 'error');
+        });
+      }
+    }
+
+    function transitionToMood() {
+      showScreen(moodScreen);
+      // Preserve any already-selected mood
+      if (selectedMood) goBtn.disabled = false;
     }
 
     // ── Mood selection ────────────────────────────────────────────────────────
@@ -566,13 +735,10 @@
 
     nextBtn.addEventListener('click', () => {
       const idx = currentIdx();
-      if (idx < videos.length - 1) {
-        currentId = videos[idx + 1].id;
-        renderVideo();
-      }
+      if (idx < videos.length - 1) { currentId = videos[idx+1].id; renderVideo(); }
     });
 
-    // ── SSE feed ──────────────────────────────────────────────────────────────
+    // ── Video feed ────────────────────────────────────────────────────────────
     async function startFeed() {
       if (!selectedMood) return;
       videos = []; currentId = null; analyzed = 0; streamDone = false;
@@ -591,13 +757,13 @@
           body: JSON.stringify({ mood: selectedMood }),
         });
       } catch (e) {
-        statusText.textContent = '⚠ Could not reach the server. Is main.py running?';
+        statusText.textContent = '⚠ Could not reach the server.';
         return;
       }
 
       if (!resp.ok) {
         let msg = `Server error ${resp.status}`;
-        try { const j = await resp.json(); msg = j.detail || msg; } catch {}
+        try { msg = (await resp.json()).detail || msg; } catch {}
         statusText.textContent = '⚠ ' + msg;
         return;
       }
@@ -614,12 +780,12 @@
         buf = lines.pop();
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
-          try { handleMsg(JSON.parse(line.slice(6))); } catch {}
+          try { handleFeedMsg(JSON.parse(line.slice(6))); } catch {}
         }
       }
     }
 
-    function handleMsg(msg) {
+    function handleFeedMsg(msg) {
       if (msg.type === 'status') {
         statusText.textContent = msg.message;
         if (msg.total) totalExpected = msg.total;
@@ -631,26 +797,21 @@
         videos.push(msg.video);
         videos.sort((a, b) => b.analysis.score - a.analysis.score);
 
-        progressFill.style.width = `${(analyzed / totalExpected) * 100}%`;
+        progressFill.style.width = `${(analyzed/totalExpected)*100}%`;
         analyzedCount.textContent = `${analyzed} / ${totalExpected} analyzed`;
 
         if (videos.length === 1) {
-          // First result — jump to results screen immediately
           currentId = videos[0].id;
           showScreen(resultsScreen);
           renderVideo();
-          analyzingBadge.textContent = `Analyzing remaining videos…`;
+          analyzingBadge.textContent = 'Analyzing remaining videos…';
           analyzingBadge.classList.add('visible');
         } else {
-          // Keep viewing the same video even if it shifts position in sorted list
           if (prevId) {
             const still = videos.find(v => v.id === prevId);
             currentId = still ? prevId : videos[0].id;
           }
-          renderDots();
-          renderNav();
-
-          // Update analyzing badge count
+          renderDots(); renderNav();
           if (!streamDone) {
             const rem = totalExpected - analyzed;
             analyzingBadge.textContent = rem > 0 ? `Analyzing ${rem} more…` : '';
@@ -658,19 +819,13 @@
         }
 
       } else if (msg.type === 'error') {
-        if (videos.length === 0) {
-          // Show error on loading screen
+        if (videos.length === 0)
           statusText.innerHTML = `<span style="color:#fca5a5">⚠ ${msg.message}</span>`;
-        }
-        // If we already have results, silently skip
 
       } else if (msg.type === 'done') {
         streamDone = true;
         analyzingBadge.classList.remove('visible');
-        if (videos.length > 0) {
-          showScreen(resultsScreen);
-          renderVideo();
-        }
+        if (videos.length > 0) { showScreen(resultsScreen); renderVideo(); }
       }
     }
 
@@ -686,48 +841,35 @@
       videoTitle.textContent   = v.title;
       videoChannel.textContent = v.channel;
 
-      // Verdict
       const isWatch = a.verdict === 'watch';
       verdictBadge.textContent = isWatch ? '✓ WATCH' : '✕ SKIP';
       verdictBadge.className   = `verdict-badge ${a.verdict}`;
       verdictWord.textContent  = isWatch ? 'WATCH IT' : 'SKIP IT';
       verdictWord.className    = `verdict-word ${a.verdict}`;
 
-      // Score
-      scoreLabel.textContent = `${a.score} / 10`;
-      scoreBar.style.width   = `${a.score * 10}%`;
-      scoreBar.style.background = scoreColor(a.score);
+      scoreLabel.textContent      = `${a.score} / 10`;
+      scoreBar.style.width        = `${a.score * 10}%`;
+      scoreBar.style.background   = scoreColor(a.score);
 
-      // Vibe
       vibePill.textContent = a.vibe.toUpperCase();
       vibePill.className   = `vibe-pill vibe-${a.vibe}`;
-
-      // Stats
       statsPill.textContent = `${fmt(v.view_count)} views · ${fmt(v.like_count)} likes`;
-
-      // Reason
       reasonText.textContent = `"${a.reason}"`;
-
-      // Link
       ytLink.href = v.url;
 
-      renderNav();
-      renderDots();
-      updateCounter();
+      renderNav(); renderDots(); updateCounter();
     }
 
     function renderNav() {
       const idx = currentIdx();
       const hasNext = idx >= 0 && idx < videos.length - 1;
-      nextBtn.disabled = !hasNext;
-      nextBtn.textContent = hasNext
-        ? `Next → (${videos.length - idx - 1} more)`
-        : 'No more';
+      nextBtn.disabled    = !hasNext;
+      nextBtn.textContent = hasNext ? `Next → (${videos.length-idx-1} more)` : 'No more';
     }
 
     function updateCounter() {
       const idx = currentIdx();
-      counter.textContent = `VIDEO ${idx + 1} OF ${videos.length}`;
+      counter.textContent = `VIDEO ${idx+1} OF ${videos.length}`;
     }
 
     function renderDots() {
@@ -736,14 +878,17 @@
       videos.forEach((v, i) => {
         const dot = document.createElement('div');
         dot.className = 'q-dot';
-        if (i === idx)      dot.classList.add('active');
-        else if (i < idx)   dot.classList.add('passed');
-        else                dot.classList.add(v.analysis.verdict); // watch | skip
+        if (i === idx)    dot.classList.add('active');
+        else if (i < idx) dot.classList.add('passed');
+        else              dot.classList.add(v.analysis.verdict);
         dot.title = `${v.analysis.score}/10 — ${v.title}`;
         dot.addEventListener('click', () => { currentId = v.id; renderVideo(); });
         queueDots.appendChild(dot);
       });
     }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    initModel();
   </script>
 </body>
 </html>
